@@ -1,43 +1,69 @@
-@startuml SequenceProto1
+@startuml Sequence_GPI
 
-participant PC
+title Processus d'alimentation automatique de la base de données GPI
+
+autonumber
+
+participant "Poste client" as PC
 participant "Contrôleur de domaine" as DC
 participant "Script de démarrage" as Script
-participant Winaudit
-participant "Convertisseur TXT -> SQL" as Convert
-database "Base de données" as DB
+participant "WinAudit" as WA
+collections "Dossier partagé" as Share
+participant "Service d'importation" as Import
+database "Base de données GPI" as DB
 
-loop Pour chaque PC
+loop À chaque connexion d'un poste au domaine
 
-    PC -> DC : Connexion au réseau LAN
+    PC -> DC : Authentification au domaine
 
-    alt PC inclus dans le domaine
+    alt Poste autorisé
 
-        DC -> Script : Exécuter le script
+        DC -> Script : Exécuter le script de démarrage
+        activate Script
 
-        Script -> Winaudit : Lancer Winaudit
+        Script -> WA : Lancer WinAudit
+        activate WA
 
-        activate Winaudit
-        Winaudit -> Winaudit : Collecter les informations
-        Winaudit --> Script : Générer Audit.txt
-        deactivate Winaudit
+        WA -> WA : Collecter les informations\n(matériel, logiciel, réseau...)
 
-        Script -> Convert : Envoyer Audit.txt
+        WA --> Share : Déposer Audit.txt
 
-        activate Convert
-        alt Fichier TXT valide
-            Convert -> Convert : Convertir TXT en SQL
-            Convert -> DB : INSERT INTO actifs
-            DB --> Convert : Confirmation
-            deactivate Convert
-        else Fichier TXT invalide
-            Convert -> Convert : Error file invalide
-            deactivate Convert
+        deactivate WA
+        deactivate Script
+
+        Import -> Share : Détecter un nouveau fichier TXT
+        Share --> Import : Audit.txt
+
+        activate Import
+
+        alt Fichier valide
+
+            Import -> Import : Analyser le fichier
+            Import -> Import : Générer les requêtes SQL
+
+            Import -> DB : INSERT / UPDATE des actifs
+
+            alt Insertion réussie
+
+                DB --> Import : Succès
+
+            else Erreur SQL
+
+                DB --> Import : Échec de l'insertion
+
+            end
+
+        else Fichier invalide
+
+            Import -> Import : Journaliser l'erreur
+
         end
 
-    else PC non inclus dans le domaine
+        deactivate Import
 
-        DC --> PC : Aucun script exécuté
+    else Poste non autorisé
+
+        DC --> PC : Refus d'exécuter le script
 
     end
 

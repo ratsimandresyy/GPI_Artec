@@ -1,58 +1,73 @@
 @startuml GPI_UseCase
 
 left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
 
+actor "Utilisateur" as User
 actor "Administrateur" as Admin
 actor "Visiteur" as Visitor
 actor "Contrôleur de domaine" as DC
-actor "Winaudit" as WinAudit
+actor "WinAudit" as WinAudit
+
+User <|-- Admin
+User <|-- Visitor
 
 rectangle "Application Web GPI" {
 
     usecase "S'authentifier" as Login
 
-    usecase "Gérer les actifs\n(CRUD)" as CRUD
+    package "Gestion du parc informatique" {
 
-    usecase "Ajouter un actif" as Add
-    usecase "Modifier un actif" as Update
-    usecase "Supprimer un actif" as Delete
+        usecase "Gérer les actifs" as ManageAssets
+        usecase "Ajouter un actif" as Add
+        usecase "Consulter un actif" as View
+        usecase "Modifier un actif" as Update
+        usecase "Supprimer un actif" as Delete
+        usecase "Rechercher un actif" as Search
 
-    usecase "Consulter les actifs\nsur le plan du bâtiment" as Map
+    }
 
-    usecase "Recevoir les notifications\nde panne" as Notify
+    package "Cartographie" {
 
-    usecase "Importer les informations\ndes machines" as Import
+        usecase "Consulter le plan\n du bâtiment" as Map
 
-    usecase "Transformer les fichiers TXT\nen données SQL" as Convert
+    }
 
-    usecase "Mettre à jour la base\nde données du parc" as UpdateDB
+    package "Maintenance" {
+
+        usecase "Gérer les notifications\n de panne" as Notify
+
+    }
+
+    package "Synchronisation" {
+
+        usecase "Importer automatiquement\n les informations des machines" as Import
+
+        usecase "Mettre à jour\n l'inventaire" as SyncDB
+
+    }
+
 }
 
+User --> Login
 
-' Utilisateurs
-
-Admin --> Login
-Admin --> CRUD
+Admin --> ManageAssets
 Admin --> Notify
+Admin --> Import
+Admin --> Map
 
-Visitor --> Login
 Visitor --> Map
 
-
-' Décomposition CRUD
-
-CRUD ..> Add : <<include>>
-CRUD ..> Update : <<include>>
-CRUD ..> Delete : <<include>>
-
-
-' Collecte automatique
+ManageAssets ..> Add : <<include>>
+ManageAssets ..> View : <<include>>
+ManageAssets ..> Update : <<include>>
+ManageAssets ..> Delete : <<include>>
+ManageAssets ..> Search : <<include>>
 
 DC --> WinAudit
 WinAudit --> Import
 
-Import ..> Convert : <<include>>
-Convert ..> UpdateDB : <<include>>
-
+Import ..> SyncDB : <<include>>
 
 @enduml
