@@ -1,0 +1,46 @@
+@startuml SequenceProto1
+
+participant PC
+participant "Contrôleur de domaine" as DC
+participant "Script de démarrage" as Script
+participant Winaudit
+participant "Convertisseur TXT -> SQL" as Convert
+database "Base de données" as DB
+
+loop Pour chaque PC
+
+    PC -> DC : Connexion au réseau LAN
+
+    alt PC inclus dans le domaine
+
+        DC -> Script : Exécuter le script
+
+        Script -> Winaudit : Lancer Winaudit
+
+        activate Winaudit
+        Winaudit -> Winaudit : Collecter les informations
+        Winaudit --> Script : Générer Audit.txt
+        deactivate Winaudit
+
+        Script -> Convert : Envoyer Audit.txt
+
+        activate Convert
+        alt Fichier TXT valide
+            Convert -> Convert : Convertir TXT en SQL
+            Convert -> DB : INSERT INTO actifs
+            DB --> Convert : Confirmation
+            deactivate Convert
+        else Fichier TXT invalide
+            Convert -> Convert : Error file invalide
+            deactivate Convert
+        end
+
+    else PC non inclus dans le domaine
+
+        DC --> PC : Aucun script exécuté
+
+    end
+
+end
+
+@enduml

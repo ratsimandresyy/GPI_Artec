@@ -1,0 +1,33 @@
+@startuml user_case_GPI
+
+left to right direction
+
+actor User
+actor "Administrator" as Admin
+actor "Server Domain Controller" as SDC
+actor "Winaudit" as software
+
+rectangle "GPI" {
+
+    usecase "Démarrer la collecte" as start
+    usecase "Récupérer les informations" as collecte
+    usecase "S'authentifier" as login
+    usecase "Gérer les fournitures" as gestion
+    usecase "Voir les équipements sur le plan" as Viewplan
+
+}
+
+Admin --|> User
+
+User --> Viewplan
+Admin --> gestion
+
+Viewplan ..> login : <<include>>
+gestion ..> login : <<include>>
+
+SDC --> collecte
+software --> collecte
+
+start ..> collecte : <<include>>
+
+@enduml
