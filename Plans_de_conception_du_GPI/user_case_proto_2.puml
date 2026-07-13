@@ -1,0 +1,58 @@
+@startuml GPI_UseCase
+
+left to right direction
+
+actor "Administrateur" as Admin
+actor "Visiteur" as Visitor
+actor "Contrôleur de domaine" as DC
+actor "Winaudit" as WinAudit
+
+rectangle "Application Web GPI" {
+
+    usecase "S'authentifier" as Login
+
+    usecase "Gérer les actifs\n(CRUD)" as CRUD
+
+    usecase "Ajouter un actif" as Add
+    usecase "Modifier un actif" as Update
+    usecase "Supprimer un actif" as Delete
+
+    usecase "Consulter les actifs\nsur le plan du bâtiment" as Map
+
+    usecase "Recevoir les notifications\nde panne" as Notify
+
+    usecase "Importer les informations\ndes machines" as Import
+
+    usecase "Transformer les fichiers TXT\nen données SQL" as Convert
+
+    usecase "Mettre à jour la base\nde données du parc" as UpdateDB
+}
+
+
+' Utilisateurs
+
+Admin --> Login
+Admin --> CRUD
+Admin --> Notify
+
+Visitor --> Login
+Visitor --> Map
+
+
+' Décomposition CRUD
+
+CRUD ..> Add : <<include>>
+CRUD ..> Update : <<include>>
+CRUD ..> Delete : <<include>>
+
+
+' Collecte automatique
+
+DC --> WinAudit
+WinAudit --> Import
+
+Import ..> Convert : <<include>>
+Convert ..> UpdateDB : <<include>>
+
+
+@enduml
