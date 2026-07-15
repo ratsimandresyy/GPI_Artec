@@ -1,0 +1,21 @@
+@startuml Consultation
+
+title Activité Consultation pov : user
+
+start
+
+:Connection de l'utilisateur;
+
+if (Authentification réussie ?) then (Oui)
+    :Afficher le plan graphique;
+
+    if (selection d'un ordi/curseur sur l'ordi ?) then (oui)
+        : recherher les info dans la base;
+        : afficher information de l'ordi;
+    endif
+
+    : deconnexion;
+else (Non)
+    : Affichage d'un message d'erreur ou page 403;
+
+endif

@@ -1,6 +1,6 @@
 @startuml convertion_complet
 
-title Activité détaillée : Import automatique des données
+title Activité Import automatique des données
 
 start
 

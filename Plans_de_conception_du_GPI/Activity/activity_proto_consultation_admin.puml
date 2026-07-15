@@ -1,0 +1,28 @@
+@startuml ConsultationAdmin
+
+title Consutation pov : Administrator
+
+start
+
+: Connexion;
+
+if (Authentification reussi ?) then (Oui)
+    : Afficher dashboard d'administration;
+
+    : Choisir une action;
+
+    switch (action dispo)
+    case (Ajouter)
+        :ajouter un ordinateur;
+    case (Modifier)
+        :modifier un ordinateur;
+    case (Supprimer)
+        :Supprimer un ordinateur;
+    case (consulter)
+        :afficher les infos d'un ordinateur
+    endswitch
+endif
+
+stop
+
+@enduml
