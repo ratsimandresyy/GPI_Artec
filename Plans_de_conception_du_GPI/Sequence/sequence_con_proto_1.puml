@@ -1,0 +1,51 @@
+@startuml convertion
+
+title Conversion fichier TXT -> Base
+
+participant "WinAudit" as source
+participant "Dossier Audits" as folder
+participant "watcher.py" as watcher
+participant "parser.py" as lecture
+participant "mapping.py" as mapping
+participant "service.py" as service
+participant "Django ORM" as orm
+participant "Base de donnée" as BDD
+
+
+WinAudit -> folder : Génère fichier TXT
+
+
+watcher -> folder : surveille nouveaux fichiers
+
+
+loop Nouveau fichier TXT détecté
+
+    watcher -> parser : transmet chemin du fichier
+
+    parser -> parser : lecture du contenu TXT
+
+    parser -> mapping : conversion des champs WinAudit
+
+    mapping --> service : données structurées
+
+
+    service -> BDD : recherche ordinateur existant
+
+
+    alt Ordinateur inexistant
+
+        service -> orm : création ordinateur
+
+        orm -> BDD : INSERT
+
+    else Ordinateur existant
+
+        service -> orm : mise à jour ordinateur
+
+        orm -> BDD : UPDATE
+
+    end
+
+end
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml convertion_complet
+
+title Activité détaillée : Import automatique des données
+
+start
+
+:Le watcher surveille le dossier;
+
+repeat
+
+    :Détecter un nouveau rapport;
+
+    :Ouvrir le fichier TXT;
+
+    :Lire chaque section;
+
+    repeat
+
+        :Identifier la section;
+
+        :Rechercher le mapping;
+
+        :Convertir les données;
+
+        if (Données correctes ?) then (Oui)
+
+            :Ajouter aux objets à importer;
+
+        else (Non)
+
+            :Ajouter au journal d'erreurs;
+
+        endif
+
+    repeat while (Section suivante ?)
+
+    :Début de transaction SQL;
+
+    :Insérer les données;
+
+    if (Erreur SQL ?) then (Oui)
+
+        :Rollback;
+
+        :Journaliser l'erreur;
+
+    else (Non)
+
+        :Commit;
+
+        :Déplacer le fichier dans
+        le dossier Archive;
+
+    endif
+
+repeat while (Autre fichier ?)
+
+stop
+
+@enduml

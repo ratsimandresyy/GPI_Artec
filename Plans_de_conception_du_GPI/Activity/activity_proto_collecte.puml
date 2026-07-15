@@ -1,0 +1,24 @@
+@startuml CollectDonnée
+
+title Activités collectes de données
+
+start
+
+: lancement de WinAudite;
+
+ : demande à windows les information de l'ordi;
+
+repeat
+
+    if (données present ?) then (Oui)
+
+        : Ajout dans le fichier texte;
+
+    else (Non)
+
+        : Ajouter un blanc dans le fichier txt ou laiser vide;
+    endif
+
+repeat while (nouvelle information ?)
+
+: Envoyer le fichier TXT dans le dossier d'historique;
