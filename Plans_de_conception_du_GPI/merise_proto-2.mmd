@@ -1,0 +1,74 @@
+erDiagram
+USER {
+  int id PK
+  string name
+  string firstname
+  string email
+  string password
+  string role
+}
+
+  BATIMENT {
+    int id PK
+    string nameBat
+    string adresse
+  }
+
+  ETAGE {
+    int id PK
+    string name
+    string image_plan
+    int batiment_id FK
+  }
+
+  SERVICE {
+    int id PK
+    string name
+  }
+
+  TYPE_EQUIPEMENT {
+    int id PK
+    string name
+  }
+
+  COMPUTER {
+    int id PK
+    string nom
+    string adresse_ip
+    string adresse_mac
+    string numero_serie
+    string status
+    int type_id FK
+    int service_id FK
+  }
+
+  LOCALISATION {
+    int id PK
+    float pos_x
+    float pos_y
+    datetime date_localisation
+    int computer_id FK
+    int etage_id FK
+  }
+
+  RAPPORT_AUDIT {
+    int id PK
+    datetime date_collecte
+    string systeme_exploitation
+    string processeur
+    int ram
+    string last_user
+    string source_file
+    string raw_data
+    int computer_id
+  }
+
+  BATIMENT ||--o{ ETAGE : contient
+  ETAGE ||--o{ LOCALISATION : possede
+
+  SERVICE ||--o{ COMPUTER : utilise
+  TYPE_EQUIPEMENT ||--o{ COMPUTER : caracterise
+
+  COMPUTER ||--o{ LOCALISATION : est_localise
+  COMPUTER ||--o{ RAPPORT_AUDIT : possede
+

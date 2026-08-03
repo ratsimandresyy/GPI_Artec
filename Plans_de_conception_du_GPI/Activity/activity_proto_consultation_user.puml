@@ -13,9 +13,12 @@ if (Authentification réussie ?) then (Oui)
         : recherher les info dans la base;
         : afficher information de l'ordi;
     endif
-
-    : deconnexion;
+    
 else (Non)
     : Affichage d'un message d'erreur ou page 403;
 
 endif
+
+: Deconnexion;
+
+stop

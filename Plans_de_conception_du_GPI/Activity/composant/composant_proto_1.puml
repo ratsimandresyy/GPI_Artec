@@ -1,0 +1,46 @@
+@startuml
+title Diagramme de composants - Système GPI
+
+skinparam componentStyle rectangle
+
+actor Utilisateur
+actor Administrateur
+
+package "Collecte des données" {
+
+component "WinAudit" as WinAudit
+component "Watcher\n(importer_data.py)" as Watcher
+component "Parser\n(parser.py)" as Parser
+component "Mapping\n(mapping.py)" as Mapping
+component "Service Métier\n(service.py)" as Service
+component "Importateur\n(importer.py)" as Importer
+
+}
+
+database "Base de données GPI" as DB
+
+package "Application GPI" {
+
+component "API Backend" as API
+component "Authentification" as Auth
+component "Interface Web" as UI
+
+}
+
+WinAudit --> Watcher : génère un fichier TXT
+Watcher --> Parser : détecte le fichier
+Parser --> Mapping : données brutes
+Mapping --> Service : données converties
+Service --> Importer : données validées
+Importer --> DB : INSERT/UPDATE
+
+UI --> Auth
+Auth --> DB
+
+Utilisateur --> UI
+Administrateur --> UI
+
+UI --> API
+API --> DB
+
+@enduml

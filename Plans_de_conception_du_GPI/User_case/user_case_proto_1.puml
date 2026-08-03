@@ -1,33 +1,81 @@
-@startuml user_case_GPI
+@startuml GPI_UseCase
 
 left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
 
-actor User
-actor "Administrator" as Admin
-actor "Server Domain Controller" as SDC
-actor "Winaudit" as software
+actor "Visiteur" as Visitor
+actor "Utilisateur\nauthentifié" as User
+actor "Administrateur" as Admin
 
-rectangle "GPI" {
+Visitor <|-- User
+User <|-- Admin
 
-    usecase "Démarrer la collecte" as start
-    usecase "Récupérer les informations" as collecte
-    usecase "S'authentifier" as login
-    usecase "Gérer les fournitures" as gestion
-    usecase "Voir les équipements sur le plan" as Viewplan
+rectangle "Application Web GPI" {
+
+    usecase "S'authentifier" as Login
+
+    package "Gestion du parc informatique" {
+
+        usecase "Consulter un actif" as View
+        usecase "Rechercher un actif" as Search
+        usecase "Gérer les actifs" as ManageAssets
+        usecase "Ajouter un actif" as Add
+        usecase "Modifier un actif" as Update
+        usecase "Supprimer un actif" as Delete
+
+    }
+
+    package "Cartographie" {
+
+        usecase "Consulter le plan\ndu bâtiment" as Map
+        usecase "Localiser un actif\nsur le plan" as Locate
+        usecase "Positionner / déplacer\nun actif sur le plan" as Position
+
+    }
+
+    package "Maintenance" {
+
+        usecase "Gérer les notifications\nde panne" as Notify
+
+    }
+
+    package "Synchronisation" {
+
+        usecase "Importer et parser\nles données (logs / WinAudit)" as Import
+        usecase "Mettre à jour l'inventaire" as SyncDB
+
+    }
 
 }
 
-Admin --|> User
+' -- Accès Visiteur (anonyme, lecture seule sur le plan) --
+Visitor --> Map
 
-User --> Viewplan
-Admin --> gestion
+' -- Accès Utilisateur authentifié (hérite de Visitor + consultation) --
+User --> Login
+User --> View
+User --> Search
+User --> Locate
 
-Viewplan ..> login : <<include>>
-gestion ..> login : <<include>>
+' -- Accès Administrateur (hérite de User + gestion complète) --
+Admin --> ManageAssets
+Admin --> Position
+Admin --> Notify
+Admin --> Import
 
-SDC --> collecte
-software --> collecte
+' -- Relations d'inclusion --
+ManageAssets ..> Add : <<include>>
+ManageAssets ..> Update : <<include>>
+ManageAssets ..> Delete : <<include>>
 
-start ..> collecte : <<include>>
+Search ..> Locate : <<extend>>
+Import ..> SyncDB : <<include>>
+
+note right of Import
+  Déclenché automatiquement par
+  un watcher (module watchdog),
+  pas par un acteur humain externe
+end note
 
 @enduml
