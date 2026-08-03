@@ -1,0 +1,52 @@
+@startuml
+title Déploiement du système GPI
+
+node "Contrôleur de domaine" {
+
+    node "Serveur GPI" {
+
+        artifact "Application Web"
+
+        artifact "API"
+
+        artifact "Watcher"
+
+        artifact "Parser"
+
+        artifact "Importateur"
+
+    }
+
+    database "PostgreSQL"
+
+}
+
+cloud "Réseau local"
+
+node "PC 1" {
+    artifact "WinAudit"
+}
+
+node "PC 2" {
+    artifact "WinAudit"
+}
+
+node "PC n" {
+    artifact "WinAudit"
+}
+
+node "Utilisateur"
+
+node "Administrateur"
+
+"PC 1" --> "Serveur GPI"
+"PC 2" --> "Serveur GPI"
+"PC n" --> "Serveur GPI"
+
+"Serveur GPI" --> "PostgreSQL"
+
+"Utilisateur" --> "Serveur GPI"
+
+"Administrateur" --> "Serveur GPI"
+
+@enduml

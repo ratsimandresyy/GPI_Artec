@@ -1,27 +1,48 @@
-@startuml ConsultationAdmin
-
-title Consutation pov : Administrator
+@startuml
+title Consultation - Point de vue Administrateur
 
 start
 
-: Connexion;
+:Connexion;
 
-if (Authentification reussi ?) then (Oui)
-    : Afficher dashboard d'administration;
+if (Authentification réussie ?) then (Oui)
 
-    : Choisir une action;
+    :Afficher le tableau de bord d'administration;
 
-    switch (action dispo)
-    case (Ajouter)
-        :ajouter un ordinateur;
-    case (Modifier)
-        :modifier un ordinateur;
-    case (Supprimer)
-        :Supprimer un ordinateur;
-    case (consulter)
-        :afficher les infos d'un ordinateur
+    switch (Choisir une action)
+
+        case (Ajouter)
+            :Ajouter un ordinateur;
+            :Mettre à jour la base de données;
+
+        case (Modifier)
+            :Modifier un ordinateur;
+            :Mettre à jour la base de données;
+
+        case (Supprimer)
+            :Supprimer un ordinateur;
+            :Mettre à jour la base de données;
+
+        case (Consulter)
+            :Afficher les informations d'un ordinateur;
+
+            if (Changer la disposition des ordinateurs ?) then (Oui)
+                :Afficher la nouvelle disposition;
+                :Modifier les coordonnées dans la base;
+                :Sauvegarder la base;
+            else (Non)
+                :Conserver la disposition actuelle;
+            endif
+
     endswitch
+
+else (Non)
+
+    :Afficher un message d'erreur;
+
 endif
+
+: Deconnexion;
 
 stop
 

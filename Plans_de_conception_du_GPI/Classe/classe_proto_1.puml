@@ -1,0 +1,101 @@
+@startuml
+
+title Diagramme de classe - App gestion de park inforamtique 
+
+class User {
+    -id : int
+    -name : string
+    -firstname : string
+    -email : string
+    -passWord : string
+
+    +login()
+    +watchComp()
+}
+
+class Administrator {
+    +addComp()
+    +modComp()
+    +delComp() 
+    +changPos()
+}
+
+User <|-- Administrator
+
+class Computer {
+    -id : int
+    -name : string
+    -adresseIP: string
+    -adresseMAC : string
+    -OS : string
+    -processeur : string
+    -processor : string
+    -ram : int
+
+    +showInf()
+    +update()
+}
+
+class Localisation {
+    -id : int
+    -posX : float
+    -posY : float
+
+    +move()
+}
+
+class Salle {
+    -id : int
+    -nom : string
+    -plan : string
+
+    +showPlan()
+
+}
+
+class RapportAudit {
+    -id : int
+    -collectDay : Date
+    -sourceFile : string
+
+    +extractData()
+
+}
+
+class Importator {
+    +importFile()
+    +recordData()
+
+}
+
+class Parser {
+    +lireFichierTXT()
+    +extraireInformations()
+
+}
+
+class DataBase {
+    +save()
+    +search()
+    +modify()
+    +delete()
+
+}
+
+Computer "1" -- "1" Localisation
+Salle "1" -- "*" Localisation
+
+Computer "1" -- "*" RapportAudit
+
+Importator --> Parser
+Importator --> DataBase
+
+Parser --> RapportAudit
+
+DataBase --> Computer
+
+User --> Computer : consulte
+
+Administrator --> Computer : gère
+
+@enduml

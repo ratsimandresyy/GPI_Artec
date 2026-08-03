@@ -1,0 +1,57 @@
+```mermaid
+erDiagram
+  BATIMENT ||--o{ SALLE : possede
+  SALLE ||--o{ LOCALISATION : accueille
+  ORDINATEUR ||--o{ LOCALISATION : concerne
+  ORDINATEUR ||--o{ RAPPORT_AUDIT : concerne
+
+  ADMINISTRATEUR {
+    int id PK
+    string nom
+    string prenom
+    string email
+    string mot_de_passe
+  }
+
+  BATIMENT {
+    int id PK
+    string nom
+    string adresse
+  }
+
+  SALLE {
+    int id PK
+    string nom
+    string image_plan
+    int batiment_id FK
+  }
+
+  ORDINATEUR {
+    int id PK
+    string nom
+    string adresse_ip
+    string adresse_mac
+    string os
+    string processeur
+    int ram
+    string statut
+    string dernier_utilisateur_connu
+  }
+
+  LOCALISATION {
+    int id PK
+    float pos_x
+    float pos_y
+    datetime date_enregistrement
+    int ordinateur_id FK
+    int salle_id FK
+  }
+
+  RAPPORT_AUDIT {
+    int id PK
+    datetime date_collecte
+    string fichier_source
+    text donnees_brutes
+    int ordinateur_id FK
+  }
+```
