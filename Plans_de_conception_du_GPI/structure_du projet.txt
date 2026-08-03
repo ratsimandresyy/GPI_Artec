@@ -1,0 +1,39 @@
+gestion_parc/
+├── config/
+│   ├── settings.py          # un seul fichier suffit en solo — pas besoin de base/dev/prod.py
+│   ├── urls.py               # routes racine (inclut celles de chaque app)
+│   └── wsgi.py
+│
+├── accounts/                 # authentification
+│   ├── serializers.py
+│   ├── views.py
+│   └── urls.py
+│
+├── inventaire/                # cœur métier : équipements + localisation
+│   ├── models.py
+│   ├── serializers.py
+│   ├── services.py
+│   ├── views.py
+│   └── urls.py
+│
+├── audit/                     # import WinAudit
+│   ├── models.py
+│   ├── parser.py
+│   ├── mapping.py
+│   ├── importer.py
+│   ├── services.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   └── management/
+│        └── commands/
+│              ├── importer_audits.py
+│              └── watcher.py
+│
+├── dashboard/                  #tableau de bord du projet
+│   ├── views.py
+│   ├──serializers.py
+│   └── urls.py
+│
+└── media/
+    └── audits/
