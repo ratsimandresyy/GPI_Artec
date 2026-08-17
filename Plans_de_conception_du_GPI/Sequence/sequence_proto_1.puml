@@ -1,69 +1,39 @@
 @startuml Sequence_GPI
 
-title Processus d'alimentation automatique de la base de données GPI
+title Processus d'alimentation automatique de la base GPI
 
 autonumber
 
 participant "Poste client" as PC
 participant "Contrôleur de domaine" as DC
-participant "Script de démarrage" as Script
+participant "Script d'ouverture de session" as Script
 participant "WinAudit" as WA
-collections "Dossier partagé" as Share
+collections "Dossier Audits" as Share
 participant "Service d'importation" as Import
 database "Base de données GPI" as DB
 
-loop À chaque connexion d'un poste au domaine
+loop À chaque ouverture de session
 
-    PC -> DC : Authentification au domaine
+    PC -> DC : Authentification
 
-    alt Poste autorisé
+    alt Authentification réussie
 
-        DC -> Script : Exécuter le script de démarrage
-        activate Script
+        DC -> Script : Exécuter le script
+        Script -> WA : Lancer l'inventaire
 
-        Script -> WA : Lancer WinAudit
-        activate WA
+        WA -> PC : Collecter les informations
+        WA --> Share : Déposer le fichier TXT
 
-        WA -> WA : Collecter les informations\n(matériel, logiciel, réseau...)
+        Import -> Share : Détecter le nouveau fichier
+        Share --> Import : Transmettre le fichier
 
-        WA --> Share : Déposer Audit.txt
+        Import -> DB : Créer ou mettre à jour l'actif
 
-        deactivate WA
-        deactivate Script
+        DB --> Import : Résultat de l'opération
 
-        Import -> Share : Détecter un nouveau fichier TXT
-        Share --> Import : Audit.txt
+    else Authentification échouée
 
-        activate Import
-
-        alt Fichier valide
-
-            Import -> Import : Analyser le fichier
-            Import -> Import : Générer les requêtes SQL
-
-            Import -> DB : INSERT / UPDATE des actifs
-
-            alt Insertion réussie
-
-                DB --> Import : Succès
-
-            else Erreur SQL
-
-                DB --> Import : Échec de l'insertion
-
-            end
-
-        else Fichier invalide
-
-            Import -> Import : Journaliser l'erreur
-
-        end
-
-        deactivate Import
-
-    else Poste non autorisé
-
-        DC --> PC : Refus d'exécuter le script
+        DC --> PC : Accès refusé
 
     end
 

@@ -142,3 +142,7 @@ CORS_ALLOWED_ORIGINS = [
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTIFICATION_CLASSES": ("rest_framework_simplejwt.authentification.JWTAuthentification",),
+}

@@ -1,3 +1,4 @@
+```plantuml
 @startuml GPI_UseCase
 
 left to right direction
@@ -5,15 +6,11 @@ skinparam packageStyle rectangle
 skinparam actorStyle awesome
 
 actor "Visiteur" as Visitor
-actor "Utilisateur\nauthentifié" as User
 actor "Administrateur" as Admin
 
-Visitor <|-- User
-User <|-- Admin
+Visitor <|-- Admin
 
 rectangle "Application Web GPI" {
-
-    usecase "S'authentifier" as Login
 
     package "Gestion du parc informatique" {
 
@@ -46,19 +43,15 @@ rectangle "Application Web GPI" {
         usecase "Mettre à jour l'inventaire" as SyncDB
 
     }
-
 }
 
-' -- Accès Visiteur (anonyme, lecture seule sur le plan) --
+' -- Accès Visiteur (anonyme) --
+Visitor --> View
+Visitor --> Search
 Visitor --> Map
+Visitor --> Locate
 
-' -- Accès Utilisateur authentifié (hérite de Visitor + consultation) --
-User --> Login
-User --> View
-User --> Search
-User --> Locate
-
-' -- Accès Administrateur (hérite de User + gestion complète) --
+' -- Accès Administrateur --
 Admin --> ManageAssets
 Admin --> Position
 Admin --> Notify
@@ -69,13 +62,20 @@ ManageAssets ..> Add : <<include>>
 ManageAssets ..> Update : <<include>>
 ManageAssets ..> Delete : <<include>>
 
-Search ..> Locate : <<extend>>
+Search ..> Locate : <<include>>
 Import ..> SyncDB : <<include>>
 
+note right of Visitor
+Accès sans authentification :
+le visiteur peut consulter les actifs,
+les rechercher et voir leur localisation
+sur le plan du bâtiment.
+end note
+
 note right of Import
-  Déclenché automatiquement par
-  un watcher (module watchdog),
-  pas par un acteur humain externe
+Déclenché automatiquement par
+un watcher (module watchdog),
+pas par un acteur humain externe.
 end note
 
 @enduml
