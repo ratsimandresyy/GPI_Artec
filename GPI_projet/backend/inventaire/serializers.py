@@ -35,5 +35,5 @@ class PlanSerializer(serializers.ModelSerializer):
 
 class PositionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Salle
+        model = Position
         fields = "__all__"
