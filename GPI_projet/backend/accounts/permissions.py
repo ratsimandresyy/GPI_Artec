@@ -4,6 +4,6 @@ class IsAdministrateurOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.methode in ("GET", "HEAD", "OPTIONS"):
+        if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
         return request.user.role == "ADMIN"
