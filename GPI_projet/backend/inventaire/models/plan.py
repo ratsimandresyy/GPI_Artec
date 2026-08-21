@@ -23,4 +23,4 @@ class Plan(models.Model):
     )
 
     def __str__(self):
-        return f"Plan - {self.etage}"
+        return f"Plan - {self.etage.nom}"

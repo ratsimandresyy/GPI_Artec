@@ -37,3 +37,30 @@ class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
         fields = "__all__"
+
+class PositionDetailSerializer(serializers.ModelSerializer):
+    #detaille de la localisation
+    equipement_nom = serializers.CharField(
+        source="equipement.nom",
+        read_only=True,
+    )
+    numero_inventaire = serializers.CharField(
+        source = "equipement.numero_inventaire",
+        read_only = True,
+    )
+    plan_image = serializers.ImageField(
+        source = "plan.image",
+        read_only = True,
+    )
+    class Meta:
+        model = Position
+        fields = [
+            "id",
+            "equipement",
+            "equipement_nom",
+            "numero_inventaire",
+            "plan",
+            "plan_image",
+            "x",
+            "y",
+        ]
