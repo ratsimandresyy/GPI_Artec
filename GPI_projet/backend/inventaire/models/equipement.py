@@ -18,9 +18,25 @@ class Equipement(models.Model):
         choices = TypeEquipement.choices,
     )
 
+    fabricant = models.CharField(
+        max_length = 100,
+        blank = True,
+    )
+
+    modele = models.CharField(
+        max_length = 100,
+        blank = True,
+    )
+
     numero_inventaire = models.CharField(
         max_length = 100,
         unique = True,
+    )
+
+    numero_serie = models.CharField(
+        max_length = 100,
+        unique = True,
+        blank = True,
     )
 
     adresse_ip = models.GenericIPAddressField(
