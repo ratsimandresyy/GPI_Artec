@@ -1,20 +1,39 @@
 from django.contrib import admin
-from .models import RapportAudit
+from .models import RapportAudit,ConnexionAudit
 
 # Register your models here.
 @admin.register(RapportAudit)
 class RapportAuditAdmin(admin.ModelAdmin):
     list_display = (
-        "nom_fichier",
-        "date_importation",
-        "traite",
+        "equipement",
+        "date_audit",
+        "system_exploitation",
+        "processeur",
     )
 
     list_filter = (
-        "traite",
-        "date_importation",
+        "date_audit",
+        "system_exploitation",
     )
 
     search_fields = (
-        "nom_fichier",
+        "equipement_nom",
+        "equipement_numero_inventaire",
+    )
+
+@admin.register(ConnexionAudit)
+class ConnexionAuditAdmin(admin.ModelAdmin):
+    list_display = (
+        "equipement",
+        "utilisateur",
+        "date_connexion",
+    )
+
+    list_filter = (
+        "date_connexion",
+    )
+
+    search_fields = (
+        "equipement_nom",
+        "nom_utilisateur",
     )
