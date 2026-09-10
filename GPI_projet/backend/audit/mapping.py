@@ -15,7 +15,7 @@ class WinAuditMapper:
                 system, "Serial Number",
             ),
             "fabricant": self._get_value(
-                system, "Manufacturer,"
+                system, "Manufacturer",
             ),
             "modele": self._get_value(
                 system, "Model",
@@ -30,7 +30,7 @@ class WinAuditMapper:
         systeme = self.data.get("Résumé du Système", {})
         return {
             "date_audit": self.date_audit,
-            "systeme_exploitation": self._get_value(
+            "system_exploitation": self._get_value(
                 systeme,
                 "Operating System"
             ),

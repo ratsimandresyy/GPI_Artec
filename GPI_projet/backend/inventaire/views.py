@@ -79,7 +79,7 @@ class PlanViewSet(viewsets.ModelViewSet):
 
 class PositionViewSet(viewsets.ModelViewSet):
     queryset = Position.objects.select_related(
-        "équipement",
+        "equipement",
         "plan",
     )
     serializer_class = PositionDetailSerializer
