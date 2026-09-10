@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+from django.utils import timezone
 
 class WinAuditParser:
     def __init__(self, file_path: Path):
@@ -36,14 +37,10 @@ class WinAuditParser:
                 line = line.strip()
 
                 if line.startswith("Audit de l'Ordinateur"):
-                    try:
-                        date_str = line.split("::", 1)[1].strip()
-                        return datetime.strptime(
-                            date_str,
-                            "%d/%m/%Y %H:%M:%S",
-                        )
-                    except (IndexError, ValueError):
-                        return None
+                    date_str = line.split("::", 1)[1].strip()
+                    date_audit = datetime.strptime(date_str, "%d/%m/%Y %H:%M:%S")
+                    return timezone.make_aware(date_audit)
+        return None
 
     @staticmethod
     def _parse_section(line: str,) -> str | None:
