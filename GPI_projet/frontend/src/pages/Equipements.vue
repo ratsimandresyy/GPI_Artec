@@ -2,6 +2,19 @@
     <div class = "equipements-page">
         <h1>Equipements</h1>
 
+      <!-- Zone de recherche -->
+        <form class="search-form" @submit.prevent="rechercher">
+            <input v-model="termeRecherche" type="text" placeholder="Nom ou numéro d'inventaire"/>
+
+            <button type="submit">
+                Rechercher
+            </button>
+
+            <button type="button" @click="reinitialiser">
+                reinitialiser
+            </button>
+        </form>
+
         <!--Chargement-->
         <p v-if="loading">
             Chargement des equipements...
@@ -11,6 +24,11 @@
         <p v-else-if="errorMessage" class="error">
             {{  errorMessage }}
         </p>
+
+        <!-- Aucun resultat -->
+         <p v-else-if="equipements.length === 0">
+            Aucun equipement trouve.
+         </p>
 
         <!-- Tableau -->
          <table v-else>
@@ -27,9 +45,12 @@
             </thead>
 
             <tbody>
-                <tr v-for="equipement in equipements":key="equipement.id">
+                <tr 
+                v-for="equipement in equipements"
+                :key="equipement.id"
+                >
                     <td>{{ equipement.id }}</td>
-                    <td>{{ equipement.nom }}</td>
+                    <td><button type="button" class="equipement-link" @click="voirEquipement(equipement.id)">{{ equipement.nom }}</button></td>
                     <td>{{ equipement.numero_inventaire }}</td>
                     <td>{{ equipement.fabricant }}</td>
                     <td>{{ equipement.modele }}</td>
@@ -43,11 +64,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getEquipements } from '../services/equipementService';
+import { getEquipements,rechercherEquipement } from '../services/equipementService';
+import { useRouter } from 'vue-router';
 
 const equipements = ref([]);
+const termeRecherche = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
+const router = useRouter();
 
 async function chargerEquipements() {
     loading.value = true;
@@ -67,6 +91,40 @@ async function chargerEquipements() {
     }
 }
 
+async function rechercher() {
+    const terme = termeRecherche.value.trim();
+
+    if (!terme) {
+        await chargerEquipements();
+        return;
+    }
+
+    loading.value = true;
+    errorMessage.value ="";
+
+    try{
+        equipements.value = await rechercherEquipement(terme);
+    } catch (error) {
+        console.error(
+            "Erreur lors de la recherche :", error
+        );
+
+        errorMessage.value = "Impossible d'effectuer la recherche.";
+    } finally {
+        loading.value = false;
+    }
+}
+
+async function reinitialiser() {
+    termeRecherche.value = "";
+    await chargerEquipements();
+}
+
+function voirEquipement(id) {
+    console.log("Équipement sélectionné :", id);
+    router.push(`/equipements/${id}`);
+}
+
 onMounted(() => {
     chargerEquipements();
 });
@@ -75,6 +133,30 @@ onMounted(() => {
 <style scoped>
     .equipements-page {
         padding: 30px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .search-form input {
+        width: 300px;
+        padding: 8px;
+    }
+
+    .search-form button {
+        padding: 8px 15px;
+        cursor: pointer;
+    }
+
+    .equipment-link {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
     }
 
     table {
