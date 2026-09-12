@@ -62,7 +62,7 @@ class EquipementViewSet(viewsets.ModelViewSet):
 
         equipements = self.get_queryset().filter(
             models.Q(nom__icontains=terme)
-            | models.Q(numero_inventaire_icontains=terme)
+            | models.Q(numero_inventaire__icontains=terme)
         )
 
         serializer = self.get_serializer(
