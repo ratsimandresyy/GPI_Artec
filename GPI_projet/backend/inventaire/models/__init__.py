@@ -4,6 +4,7 @@ from .salle import Salle
 from .equipement import Equipement, TypeEquipement
 from .plan import Plan
 from .position import Position
+from .ticket_panne import TicketPanne
 
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "TypeEquipement",
     "Plan",
     "Position",
+    "TicketPanne",
 ]

@@ -1,172 +1,4 @@
-<template>
-    <div class="dashboard">
-
-        <div class="dashboard-header">
-            <div>
-                <h1>Dashboard</h1>
-                <p>Vue générale du parc informatique</p>
-            </div>
-
-            <button
-                type="button"
-                class="refresh-button"
-                @click="chargerDashboard"
-            >
-                Actualiser
-            </button>
-        </div>
-
-        <!-- Chargement -->
-        <div v-if="loading" class="message">
-            Chargement des données...
-        </div>
-
-        <!-- Erreur -->
-        <div v-else-if="errorMessage" class="message error">
-            {{ errorMessage }}
-        </div>
-
-        <!-- Contenu -->
-        <div v-else>
-
-            <div class="statistics-grid">
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Équipements
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.equipements }}
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Équipements actifs
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.equipementsActifs }}
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Bâtiments
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.batiments }}
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Étages
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.etages }}
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Salles
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.salles }}
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-title">
-                        Rapports d'audit
-                    </div>
-
-                    <div class="stat-value">
-                        {{ statistiques.audits }}
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="dashboard-section">
-
-                <h2>Équipements récents</h2>
-
-                <div
-                    v-if="equipementsRecents.length === 0"
-                    class="empty-message"
-                >
-                    Aucun équipement enregistré.
-                </div>
-
-                <table v-else>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nom</th>
-                            <th>Numéro d'inventaire</th>
-                            <th>Fabricant</th>
-                            <th>Modèle</th>
-                            <th>État</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <tr
-                            v-for="equipement in equipementsRecents"
-                            :key="equipement.id"
-                        >
-                            <td>{{ equipement.id }}</td>
-
-                            <td>{{ equipement.nom }}</td>
-
-                            <td>
-                                {{ equipement.numero_inventaire }}
-                            </td>
-
-                            <td>
-                                {{ equipement.fabricant || "-" }}
-                            </td>
-
-                            <td>
-                                {{ equipement.modele || "-" }}
-                            </td>
-
-                            <td>
-                                <span
-                                    :class="[
-                                        'status',
-                                        equipement.actif
-                                            ? 'active'
-                                            : 'inactive'
-                                    ]"
-                                >
-                                    {{
-                                        equipement.actif
-                                            ? "Actif"
-                                            : "Inactif"
-                                    }}
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-            </div>
-
-        </div>
-
-    </div>
-</template>
-
-
 <script setup>
-
 import { ref, onMounted } from "vue";
 
 import {
@@ -177,48 +9,31 @@ import {
     getRapportsAuditDashboard,
 } from "../services/dashboardService";
 
+// Statistiques
+const nombreEquipements = ref(0);
+const nombreBatiments = ref(0);
+const nombreEtages = ref(0);
+const nombreSalles = ref(0);
+const nombreAudits = ref(0);
 
-const loading = ref(false);
-
-const errorMessage = ref("");
-
-const equipements = ref([]);
-const batiments = ref([]);
-const etages = ref([]);
-const salles = ref([]);
-const audits = ref([]);
-
-
-const statistiques = ref({
-    equipements: 0,
-    equipementsActifs: 0,
-    batiments: 0,
-    etages: 0,
-    salles: 0,
-    audits: 0,
-});
-
-
-const equipementsRecents = ref([]);
-
+// État de la page
+const chargement = ref(true);
+const erreur = ref("");
 
 /**
- * Charge toutes les données nécessaires
- * au dashboard.
+ * Charge les données nécessaires au Dashboard.
  */
 async function chargerDashboard() {
-
-    loading.value = true;
-    errorMessage.value = "";
+    chargement.value = true;
+    erreur.value = "";
 
     try {
-
         const [
-            donneesEquipements,
-            donneesBatiments,
-            donneesEtages,
-            donneesSalles,
-            donneesAudits,
+            equipements,
+            batiments,
+            etages,
+            salles,
+            audits,
         ] = await Promise.all([
             getEquipementsDashboard(),
             getBatimentsDashboard(),
@@ -227,197 +42,242 @@ async function chargerDashboard() {
             getRapportsAuditDashboard(),
         ]);
 
-
-        equipements.value = donneesEquipements;
-        batiments.value = donneesBatiments;
-        etages.value = donneesEtages;
-        salles.value = donneesSalles;
-        audits.value = donneesAudits;
-
-
-        statistiques.value = {
-
-            equipements: equipements.value.length,
-
-            equipementsActifs:
-                equipements.value.filter(
-                    (equipement) => equipement.actif
-                ).length,
-
-            batiments: batiments.value.length,
-
-            etages: etages.value.length,
-
-            salles: salles.value.length,
-
-            audits: audits.value.length,
-        };
-
-
-        /*
-         * On affiche au maximum les 5 derniers équipements.
-         *
-         * Pour l'instant, on utilise l'ordre retourné
-         * par l'API.
-         */
-        equipementsRecents.value =
-            equipements.value.slice(-5).reverse();
+        nombreEquipements.value = equipements.length;
+        nombreBatiments.value = batiments.length;
+        nombreEtages.value = etages.length;
+        nombreSalles.value = salles.length;
+        nombreAudits.value = audits.length;
 
     } catch (error) {
-
         console.error(
-            "Erreur lors du chargement du dashboard :",
+            "Erreur lors du chargement du Dashboard :",
             error
         );
 
-        errorMessage.value =
-            "Impossible de charger les données du dashboard.";
+        erreur.value =
+            "Impossible de charger les données du tableau de bord.";
 
     } finally {
-
-        loading.value = false;
+        chargement.value = false;
     }
 }
-
 
 onMounted(() => {
     chargerDashboard();
 });
-
 </script>
 
+<template>
+    <div class="dashboard">
+
+        <!-- En-tête -->
+        <div class="dashboard-header">
+            <h1>Tableau de bord</h1>
+
+            <p>
+                Vue d'ensemble du parc informatique
+            </p>
+        </div>
+
+        <!-- Chargement -->
+        <div
+            v-if="chargement"
+            class="message"
+        >
+            Chargement des données...
+        </div>
+
+        <!-- Erreur -->
+        <div
+            v-else-if="erreur"
+            class="message erreur"
+        >
+            {{ erreur }}
+        </div>
+
+        <!-- Dashboard -->
+        <template v-else>
+
+            <!-- Statistiques -->
+            <div class="statistiques">
+
+                <div class="carte-statistique">
+                    <div class="icone">💻</div>
+
+                    <div>
+                        <p>Équipements</p>
+                        <h2>{{ nombreEquipements }}</h2>
+                    </div>
+                </div>
+
+                <div class="carte-statistique">
+                    <div class="icone">🏢</div>
+
+                    <div>
+                        <p>Bâtiments</p>
+                        <h2>{{ nombreBatiments }}</h2>
+                    </div>
+                </div>
+
+                <div class="carte-statistique">
+                    <div class="icone">🏠</div>
+
+                    <div>
+                        <p>Étages</p>
+                        <h2>{{ nombreEtages }}</h2>
+                    </div>
+                </div>
+
+                <div class="carte-statistique">
+                    <div class="icone">🚪</div>
+
+                    <div>
+                        <p>Salles</p>
+                        <h2>{{ nombreSalles }}</h2>
+                    </div>
+                </div>
+
+                <div class="carte-statistique">
+                    <div class="icone">📋</div>
+
+                    <div>
+                        <p>Rapports d'audit</p>
+                        <h2>{{ nombreAudits }}</h2>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Résumé -->
+            <div class="resume">
+
+                <h2>Résumé du parc</h2>
+
+                <p>
+                    Le système contient actuellement
+                    <strong>{{ nombreEquipements }}</strong>
+                    équipement(s) informatique(s), réparti(s) dans
+                    <strong>{{ nombreSalles }}</strong>
+                    salle(s) et
+                    <strong>{{ nombreBatiments }}</strong>
+                    bâtiment(s).
+                </p>
+
+                <p>
+                    Le système comprend également
+                    <strong>{{ nombreEtages }}</strong>
+                    étage(s) et
+                    <strong>{{ nombreAudits }}</strong>
+                    rapport(s) d'audit.
+                </p>
+
+            </div>
+
+        </template>
+
+    </div>
+</template>
 
 <style scoped>
 
 .dashboard {
-    width: 100%;
+    padding: 30px;
 }
 
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 30px;
 }
 
 .dashboard-header h1 {
     margin: 0;
-    font-size: 28px;
+    font-size: 32px;
 }
 
 .dashboard-header p {
-    margin-top: 6px;
+    margin-top: 8px;
     color: #666;
 }
 
-.refresh-button {
-    padding: 10px 18px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-}
+/* Statistiques */
 
-.refresh-button:hover {
-    background: #f5f5f5;
-}
-
-.statistics-grid {
+.statistiques {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(190px, 1fr));
+
     gap: 20px;
-    margin-bottom: 35px;
+
+    margin-bottom: 30px;
 }
 
-.stat-card {
+.carte-statistique {
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
     padding: 22px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+
     background: white;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.stat-title {
+.icone {
+    font-size: 32px;
+}
+
+.carte-statistique p {
+    margin: 0 0 5px;
+
     color: #666;
-    font-size: 14px;
-    margin-bottom: 10px;
 }
 
-.stat-value {
-    font-size: 30px;
-    font-weight: bold;
+.carte-statistique h2 {
+    margin: 0;
+
+    font-size: 28px;
 }
 
-.dashboard-section {
-    margin-top: 20px;
-}
+/* Résumé */
 
-.dashboard-section h2 {
-    margin-bottom: 15px;
-}
+.resume {
+    padding: 25px;
 
-table {
-    width: 100%;
-    border-collapse: collapse;
     background: white;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-th,
-td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+.resume h2 {
+    margin-top: 0;
 }
 
-th {
-    font-weight: bold;
+.resume p {
+    line-height: 1.6;
+
+    color: #444;
 }
 
-.status {
-    display: inline-block;
-    padding: 5px 9px;
-    border-radius: 5px;
-    font-size: 13px;
-}
-
-.status.active {
-    background: #e8f5e9;
-}
-
-.status.inactive {
-    background: #ffebee;
-}
+/* Messages */
 
 .message {
     padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+
+    background: white;
+
+    border-radius: 10px;
 }
 
-.message.error {
-    border-color: #d9534f;
-}
-
-.empty-message {
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    color: #666;
-}
-
-@media (max-width: 900px) {
-
-    .statistics-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-}
-
-@media (max-width: 600px) {
-
-    .statistics-grid {
-        grid-template-columns: 1fr;
-    }
-
+.erreur {
+    color: #b00020;
 }
 
 </style>

@@ -1,101 +1,232 @@
-@startuml
+@startuml GPI_Class
 
-title Diagramme de classe - App gestion de park inforamtique 
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
 
-class User {
-    -id : int
-    -name : string
-    -firstname : string
-    -email : string
-    -passWord : string
+' =========================================================
+' UTILISATEUR
+' =========================================================
 
-    +login()
-    +watchComp()
+class Utilisateur {
+    +id : int
+    +nom : String
+    +prenom : String
+    +email : String
+    +identifiant_domaine : String
+    +role : RoleUtilisateur
 }
 
-class Administrator {
-    +addComp()
-    +modComp()
-    +delComp() 
-    +changPos()
+enum RoleUtilisateur {
+    VISITEUR
+    ADMINISTRATEUR
 }
 
-User <|-- Administrator
+' =========================================================
+' STRUCTURE DU SITE
+' =========================================================
 
-class Computer {
-    -id : int
-    -name : string
-    -adresseIP: string
-    -adresseMAC : string
-    -OS : string
-    -processeur : string
-    -processor : string
-    -ram : int
-
-    +showInf()
-    +update()
+class Batiment {
+    +id : int
+    +nom : String
+    +adresse : String
 }
 
-class Localisation {
-    -id : int
-    -posX : float
-    -posY : float
-
-    +move()
+class Etage {
+    +id : int
+    +nom : String
+    +niveau : int
 }
 
 class Salle {
-    -id : int
-    -nom : string
-    -plan : string
-
-    +showPlan()
-
+    +id : int
+    +nom : String
+    +numero : String
 }
+
+class Plan {
+    +id : int
+    +image : String
+    +date_creation : Date
+}
+
+class Position {
+    +id : int
+    +pos_x : float
+    +pos_y : float
+}
+
+Batiment "1" -- "1..*" Etage : contient
+Etage "1" -- "0..*" Salle : contient
+Etage "1" -- "1" Plan : possède
+Plan "1" -- "0..*" Position : contient
+
+' =========================================================
+' EQUIPEMENT
+' =========================================================
+
+class Equipement {
+    +id : int
+    +nom : String
+    +numero_inventaire : String
+    +numero_serie : String
+    +fabricant : String
+    +modele : String
+    +adresse_ip : String
+    +adresse_mac : String
+    +actif : Boolean
+    +etat : EtatEquipement
+    +situation : SituationEquipement
+    +condition_stock : ConditionStock
+}
+
+enum EtatEquipement {
+    EN_SERVICE
+    EN_PANNE
+    EN_MAINTENANCE
+    HORS_SERVICE
+}
+
+enum SituationEquipement {
+    AFFECTE
+    EN_STOCK
+}
+
+enum ConditionStock {
+    NEUF
+    USAGE
+}
+
+class TypeEquipement {
+    +id : int
+    +nom : String
+}
+
+class Service {
+    +id : int
+    +nom : String
+}
+
+TypeEquipement "1" -- "0..*" Equipement : type
+Service "1" -- "0..*" Equipement : affectation
+
+Salle "1" -- "0..*" Equipement : accueille
+Equipement "1" -- "0..1" Position : position
+
+' =========================================================
+' AUDIT WINAUDIT
+' =========================================================
 
 class RapportAudit {
-    -id : int
-    -collectDay : Date
-    -sourceFile : string
-
-    +extractData()
-
+    +id : int
+    +date_audit : DateTime
+    +systeme_exploitation : String
+    +processeur : String
+    +memoire : String
+    +stockage : String
+    +bios : String
+    +donnees_brutes : JSON
 }
 
-class Importator {
-    +importFile()
-    +recordData()
+Equipement "1" -- "0..*" RapportAudit : rapports
 
+' =========================================================
+' TICKETS
+' =========================================================
+
+class Ticket {
+    +id : int
+    +titre : String
+    +description : Text
+    +type : TypeTicket
+    +priorite : PrioriteTicket
+    +statut : StatutTicket
+    +date_ouverture : DateTime
+    +date_cloture : DateTime
 }
 
-class Parser {
-    +lireFichierTXT()
-    +extraireInformations()
-
+enum TypeTicket {
+    MAINTENANCE
+    RECLAMATION
 }
 
-class DataBase {
-    +save()
-    +search()
-    +modify()
-    +delete()
-
+enum PrioriteTicket {
+    BASSE
+    NORMALE
+    HAUTE
+    CRITIQUE
 }
 
-Computer "1" -- "1" Localisation
-Salle "1" -- "*" Localisation
+enum StatutTicket {
+    OUVERT
+    EN_TRAITEMENT
+    CLOTURE
+}
 
-Computer "1" -- "*" RapportAudit
+Utilisateur "1" -- "0..*" Ticket : ouvre
+Equipement "1" -- "0..*" Ticket : concerne
 
-Importator --> Parser
-Importator --> DataBase
+' =========================================================
+' CONTRAINTES
+' =========================================================
 
-Parser --> RapportAudit
+note right of Equipement
 
-DataBase --> Computer
+Informations générales :
+- identification
+- inventaire
+- numéro de série
+- fabricant
+- modèle
+- réseau
 
-User --> Computer : consulte
+État :
+- En service
+- En panne
+- En maintenance
+- Hors service
 
-Administrator --> Computer : gère
+Situation :
+- Affecté
+- En stock
+
+Condition du stock :
+- Neuf
+- Usagé
+end note
+
+note right of RapportAudit
+
+Les informations techniques
+issues de WinAudit sont
+conservées dans les rapports.
+
+Un équipement peut posséder
+plusieurs rapports afin de
+conserver l'historique.
+end note
+
+note right of Position
+
+Une position est associée
+à un équipement affecté.
+
+Un équipement en stock
+n'a pas de position sur
+le plan.
+end note
+
+note right of Ticket
+
+Un ticket concerne
+un équipement existant.
+
+Le ticket peut rester
+en traitement alors que
+l'équipement est encore
+dans son emplacement initial.
+
+Le déplacement au dépôt
+est une opération distincte.
+end note
 
 @enduml

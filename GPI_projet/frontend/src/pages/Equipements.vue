@@ -40,7 +40,8 @@
                     <th>Fabricant</th>
                     <th>Modele</th>
                     <th>Adresse IP</th>
-                    <th>Actif</th>
+                    <th>Etat</th>
+                    <th>Situation</th>
                 </tr>
             </thead>
 
@@ -55,7 +56,8 @@
                     <td>{{ equipement.fabricant }}</td>
                     <td>{{ equipement.modele }}</td>
                     <td>{{ equipement.adresse_ip || "-" }}</td>
-                    <td>{{ equipement.actif ? "Oui" : "Non" }}</td>
+                    <td>{{ equipement.etat}}</td>
+                    <td>{{ equipement.situation }}</td>
                 </tr>
             </tbody>
          </table>

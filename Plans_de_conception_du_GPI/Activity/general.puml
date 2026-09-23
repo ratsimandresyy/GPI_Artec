@@ -1,0 +1,249 @@
+@startuml
+title Gestion du système - Point de vue Visiteur et Administrateur
+
+start
+
+:Accès au système GPI;
+
+if (Machine inscrite dans le domaine ?) then (Oui)
+
+    :Autoriser l'accès au système GPI;
+
+    if (S'authentifier comme administrateur ?) then (Oui)
+
+        repeat
+
+            :Saisir les identifiants administrateur;
+
+            if (Authentification réussie ?) then (Oui)
+
+                :Afficher le tableau de bord d'administration;
+
+                switch (Choisir une action)
+
+                    case (Gérer les matériels)
+
+                        switch (Choisir une opération)
+
+                            case (Ajouter)
+                                :Saisir les informations du matériel;
+                                :Enregistrer le matériel;
+                                :Mettre à jour la base de données;
+
+                            case (Modifier)
+                                :Sélectionner le matériel;
+                                :Modifier les informations;
+                                :Mettre à jour la base de données;
+
+                            case (Supprimer)
+                                :Sélectionner le matériel;
+
+                                if (Confirmer suppression ?) then (Oui)
+                                    :Supprimer le matériel;
+                                    :Mettre à jour la base de données;
+                                else (Non)
+                                    :Annuler la suppression;
+                                endif
+
+                            case (Consulter)
+
+                                :Rechercher ou sélectionner un matériel;
+                                :Afficher les informations du matériel;
+
+                                if (Consulter les rapports d'audit ?) then (Oui)
+                                    :Afficher les rapports WinAudit;
+                                endif
+
+                        endswitch
+
+
+                    case (Gérer l'état du matériel)
+
+                        :Sélectionner le matériel;
+                        :Afficher l'état actuel;
+                        :Choisir le nouvel état;
+                        :Enregistrer le nouvel état;
+                        :Mettre à jour la base de données;
+
+
+                    case (Gérer le stock)
+
+                        :Afficher les matériels en stock;
+                        :Sélectionner un matériel;
+
+                        if (Déplacer vers une localisation ?) then (Oui)
+
+                            :Sélectionner le bâtiment;
+                            :Sélectionner l'étage;
+                            :Sélectionner la salle;
+                            :Afficher le plan;
+                            :Positionner le matériel sur le plan;
+                            :Enregistrer les coordonnées;
+                            :Modifier la situation vers AFFECTE;
+                            :Mettre à jour la base de données;
+
+                        else (Non)
+
+                            :Conserver le matériel en stock;
+
+                        endif
+
+
+                    case (Gérer la localisation)
+
+                        :Afficher le plan;
+                        :Sélectionner un matériel;
+
+                        if (Déplacer le matériel vers le stock ?) then (Oui)
+
+                            :Retirer le matériel de sa localisation;
+                            :Supprimer sa position sur le plan;
+                            :Modifier la situation vers EN_STOCK;
+                            :Mettre à jour la base de données;
+
+                        else (Non)
+
+                            :Modifier les coordonnées;
+                            :Sauvegarder la nouvelle position;
+                            :Mettre à jour la base de données;
+
+                        endif
+
+
+                    case (Gérer les tickets)
+
+                        :Afficher la liste des tickets;
+                        :Sélectionner un ticket;
+                        :Afficher les informations du ticket et du matériel;
+
+                        :Qualifier le ticket;
+                        :Définir le type du ticket;
+                        :Définir la priorité;
+                        :Définir le statut;
+                        :Enregistrer les informations;
+
+                        :Assurer le suivi du traitement;
+
+                        if (Matériel à transférer au dépôt ?) then (Oui)
+
+                            :Récupérer le matériel;
+                            :Retirer le matériel de sa localisation;
+                            :Placer le matériel en stock;
+                            :Mettre à jour la situation;
+                            :Mettre à jour la base de données;
+
+                        else (Non)
+
+                            :Conserver la localisation actuelle;
+
+                        endif
+
+                        if (Traitement terminé ?) then (Oui)
+
+                            :Clôturer le ticket;
+                            :Enregistrer la date de clôture;
+                            :Calculer la durée de traitement;
+
+                            if (Matériel réparé ?) then (Oui)
+                                :Modifier l'état vers EN_SERVICE;
+                            else (Non)
+                                :Modifier l'état vers HORS_SERVICE;
+                            endif
+
+                            :Mettre à jour la base de données;
+
+                        else (Non)
+
+                            :Poursuivre le traitement;
+
+                        endif
+
+
+                    case (Consulter la cartographie)
+
+                        :Sélectionner un bâtiment;
+                        :Sélectionner un étage;
+                        :Afficher le plan;
+                        :Afficher les matériels localisés sur le plan;
+                        :Consulter la position d'un matériel;
+
+                endswitch
+
+            else (Non)
+
+                :Afficher un message d'authentification incorrecte;
+
+            endif
+
+        repeat while (Nouvelle tentative de connexion ?) is (Oui)
+
+        if (Authentification réussie ?) then (Oui)
+            :Poursuivre la session administrateur;
+        else (Non)
+            :Accéder au système en tant que visiteur;
+        endif
+
+    else (Non)
+
+        partition "Point de vue Visiteur" {
+
+            :Afficher l'interface de consultation;
+
+            switch (Choisir une action)
+
+                case (Consulter les matériels)
+
+                    :Afficher la liste des matériels;
+                    :Sélectionner un matériel;
+                    :Afficher les informations du matériel;
+
+                case (Rechercher un matériel)
+
+                    :Saisir les critères de recherche;
+                    :Rechercher dans l'inventaire;
+                    :Afficher les résultats;
+                    :Sélectionner un matériel;
+                    :Afficher les informations du matériel;
+
+                case (Consulter la cartographie)
+
+                    :Sélectionner un bâtiment;
+                    :Sélectionner un étage;
+                    :Afficher le plan;
+                    :Afficher les matériels localisés;
+                    :Sélectionner un matériel;
+                    :Consulter sa position;
+
+                case (Ouvrir un ticket)
+
+                    :Sélectionner un matériel;
+                    :Saisir le titre du ticket;
+                    :Saisir la description;
+                    :Choisir le type du ticket;
+
+                    if (Type de ticket ?) then (Maintenance)
+                        :Créer un ticket de maintenance;
+                    else (Réclamation)
+                        :Créer un ticket de réclamation;
+                    endif
+
+                    :Enregistrer le ticket;
+                    :Afficher la confirmation;
+
+            endswitch
+
+        }
+
+    endif
+
+else (Non)
+
+    :Accès au système GPI refusé;
+    stop
+endif
+
+:Déconnexion;
+
+stop
+
+@enduml

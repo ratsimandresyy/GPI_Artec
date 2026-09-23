@@ -8,6 +8,7 @@ from .views import(
     EquipementViewSet,
     PlanViewSet,
     PositionViewSet,
+    TicketPanneViewSet
 )
 
 router = DefaultRouter()
@@ -40,6 +41,11 @@ router.register(
 router.register(
     r"positions",
     PositionViewSet,
+)
+
+router.register(
+    r"tickets-panne",
+    TicketPanneViewSet,
 )
 
 urlpatterns = [

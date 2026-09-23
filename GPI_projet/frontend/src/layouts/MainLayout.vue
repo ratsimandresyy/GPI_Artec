@@ -20,6 +20,9 @@
                         <li>
                             <router-link to="/dashboard">Dashboard</router-link>
                         </li>
+                        <li>
+                            <router-link v-if="estAdmin" to="/utilisateurs">Utilisateur</router-link>
+                        </li>
 
                         <li>
                             <router-link to="/equipements">Équipements</router-link>
@@ -68,10 +71,14 @@ import { useRouter } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 
+import { computed } from "vue";
+
 
 const router = useRouter();
 
 const authStore = useAuthStore();
+
+const estAdmin = computed(() => authStore.isAdmin);
 
 
 function seDeconnecter() {

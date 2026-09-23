@@ -82,12 +82,18 @@
             </div>
 
             <div class="information">
-                <strong>Actif :</strong>
+                <strong>Etat :</strong>
                 <span>
-                    {{ equipement.actif ? "Oui" : "Non" }}
+                    {{ equipement.etat || "-"}}
                 </span>
             </div>
 
+            <div class="information">
+                <strong>Situation :</strong>
+                <span>
+                    {{ equipement.situation || "-"}}
+                </span>
+            </div>
         </div>
 
     </div>

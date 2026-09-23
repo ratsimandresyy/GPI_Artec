@@ -1,4 +1,3 @@
-```plantuml
 @startuml GPI_UseCase
 
 left to right direction
@@ -7,75 +6,280 @@ skinparam actorStyle awesome
 
 actor "Visiteur" as Visitor
 actor "Administrateur" as Admin
+rectangle "Contrôleur de domaine" as DomainServer <<system>>
+rectangle "Service de surveillance" as Watcher <<system>>
 
 Visitor <|-- Admin
 
-rectangle "Application Web GPI" {
+rectangle "Système Web GPI" {
 
-    package "Gestion du parc informatique" {
+    package "Accès et authentification" {
 
-        usecase "Consulter un actif" as View
-        usecase "Rechercher un actif" as Search
-        usecase "Gérer les actifs" as ManageAssets
-        usecase "Ajouter un actif" as Add
-        usecase "Modifier un actif" as Update
-        usecase "Supprimer un actif" as Delete
+        usecase "Accéder au système GPI" as AccessGPI
+        usecase "Vérifier l'appartenance\nau domaine" as VerifyDomain
+        usecase "S'authentifier comme\nadministrateur" as AdminLogin
+        usecase "Contrôler les droits\nd'administrateur" as Authorize
+    }
 
+    package "Gestion des matériels informatiques" {
+
+        usecase "Consulter un matériel" as View
+    usecase "Rechercher un matériel" as Search
+
+    usecase "Gérer les matériels" as ManageAssets
+    usecase "Ajouter un matériel" as Add
+    usecase "Modifier un matériel" as Update
+    usecase "Supprimer un matériel" as Delete
+
+    usecase "Gérer l'état\nd'un matériel" as ManageStatus
+    usecase "Gérer la situation\nd'un matériel" as ManageSituation
+    usecase "Gérer les matériels\nen stock" as ManageStock
     }
 
     package "Cartographie" {
 
-        usecase "Consulter le plan\ndu bâtiment" as Map
+        usecase "Consulter les bâtiments,\nétages et plans" as Map
         usecase "Localiser un actif\nsur le plan" as Locate
         usecase "Positionner / déplacer\nun actif sur le plan" as Position
-
     }
 
-    package "Maintenance" {
+    package "Gestion des tickets" {
 
-        usecase "Gérer les notifications\nde panne" as Notify
+        usecase "Ouvrir un ticket" as CreateTicket
+        usecase "Consulter les tickets" as ViewTickets
+        usecase "Gérer les tickets" as ManageTickets
 
+        usecase "Qualifier le ticket" as QualifyTicket
+        usecase "Suivre le traitement\ndu ticket" as ProcessTicket
+        usecase "Clôturer le ticket" as CloseTicket
     }
 
     package "Synchronisation" {
 
-        usecase "Importer et parser\nles données (logs / WinAudit)" as Import
-        usecase "Mettre à jour l'inventaire" as SyncDB
-
+        usecase "Importer et parser\nles rapports WinAudit" as Import
+        usecase "Synchroniser\nl'inventaire" as SyncDB
     }
 }
 
-' -- Accès Visiteur (anonyme) --
+' ==========================================
+' ACCÈS AU SYSTÈME
+' ==========================================
+
+Visitor --> AccessGPI
+
+AccessGPI ..> VerifyDomain : <<include>>
+
+DomainServer --> VerifyDomain
+
+' ==========================================
+' AUTHENTIFICATION ADMINISTRATEUR
+' ==========================================
+
+Admin --> AdminLogin
+
+AdminLogin ..> Authorize : <<include>>
+
+' ==========================================
+' ACCÈS VISITEUR
+' ==========================================
+
 Visitor --> View
 Visitor --> Search
 Visitor --> Map
 Visitor --> Locate
+Visitor --> CreateTicket
 
-' -- Accès Administrateur --
+' ==========================================
+' ACCÈS ADMINISTRATEUR
+' ==========================================
+
 Admin --> ManageAssets
+Admin --> ManageStatus
+Admin --> ManageSituation
+Admin --> ManageStock
 Admin --> Position
-Admin --> Notify
-Admin --> Import
 
-' -- Relations d'inclusion --
+' ==========================================
+' SYNCHRONISATION AUTOMATIQUE
+' ==========================================
+
+Watcher --> Import
+
+' ==========================================
+' RELATIONS D'INCLUSION
+' ==========================================
+
 ManageAssets ..> Add : <<include>>
 ManageAssets ..> Update : <<include>>
 ManageAssets ..> Delete : <<include>>
 
-Search ..> Locate : <<include>>
+ManageTickets ..> QualifyTicket : <<include>>
+ManageTickets ..> ProcessTicket : <<include>>
+ManageTickets ..> CloseTicket : <<include>>
+
 Import ..> SyncDB : <<include>>
 
-note right of Visitor
-Accès sans authentification :
-le visiteur peut consulter les actifs,
-les rechercher et voir leur localisation
-sur le plan du bâtiment.
+' ==========================================
+' RÈGLES D'ACCÈS
+' ==========================================
+
+note right of AccessGPI
+L'accès au système GPI est
+autorisé aux personnes
+enregistrées dans le domaine.
+
+Une fois l'accès autorisé,
+l'utilisateur peut utiliser
+le système en tant que visiteur.
 end note
 
+note right of AdminLogin
+Le login du site GPI permet
+d'identifier les utilisateurs
+disposant de droits administrateur.
+
+Si l'authentification réussit :
+accès aux fonctionnalités
+d'administration.
+
+Si aucune authentification
+administrateur n'est effectuée :
+l'utilisateur reste visiteur.
+end note
+
+note right of Authorize
+Les droits administrateur sont
+déterminés par le compte
+enregistré dans le système GPI.
+
+L'authentification au domaine
+ne donne pas automatiquement
+les droits administrateur.
+end note
+
+' ==========================================
+' ÉTAT DES MATÉRIELS
+' ==========================================
+
+note right of ManageStatus
+L'administrateur peut modifier
+l'état d'un matériel.
+
+Exemples :
+- En service
+- En panne
+- En maintenance
+- Hors service
+
+Le visiteur peut uniquement
+consulter l'état.
+end note
+
+' ==========================================
+' STOCK
+' ==========================================
+
+note right of ManageStock
+Les matériels non affectés
+à une localisation peuvent
+être placés en stock.
+
+Un matériel en stock peut être :
+- Neuf
+- Usagé
+- En panne
+
+Le stock représente une situation
+du matériel et non une entité
+indépendante.
+end note
+
+' ==========================================
+' LOCALISATION
+' ==========================================
+
+note right of Position
+L'administrateur peut :
+
+- positionner un matériel
+  sur le plan ;
+- déplacer un matériel ;
+- déplacer un matériel du stock
+  vers une localisation ;
+- retirer un matériel du plan
+  vers le stock.
+
+Un matériel en stock ne possède
+pas de position sur le plan.
+end note
+
+' ==========================================
+' TICKETS
+' ==========================================
+
+note right of CreateTicket
+Le visiteur peut ouvrir un ticket
+de maintenance ou de réclamation.
+
+Le ticket doit être associé
+à un matériel existant.
+end note
+
+note right of QualifyTicket
+L'administrateur peut qualifier
+le ticket.
+
+Types :
+- Maintenance
+- Réclamation
+
+Il peut également définir
+la priorité et le statut.
+end note
+
+note right of ProcessTicket
+L'administrateur assure
+le suivi du traitement.
+
+La durée de traitement est
+calculée entre la date
+d'ouverture et la date
+de clôture.
+end note
+
+note right of CloseTicket
+Le ticket est clôturé lorsque
+la demande ou le problème
+a été traité.
+
+La date de clôture est enregistrée
+afin de conserver l'historique.
+end note
+
+' ==========================================
+' WINAUDIT
+' ==========================================
+
 note right of Import
-Déclenché automatiquement par
-un watcher (module watchdog),
-pas par un acteur humain externe.
+Le service de surveillance
+détecte automatiquement
+les nouveaux fichiers WinAudit.
+
+Les rapports valides sont
+analysés puis importés.
+end note
+
+note right of SyncDB
+Si le matériel existe :
+mise à jour de ses informations.
+
+Sinon :
+création d'un nouvel actif.
+
+Le rapport d'audit est associé
+au matériel correspondant afin
+de conserver l'historique
+des audits.
 end note
 
 @enduml

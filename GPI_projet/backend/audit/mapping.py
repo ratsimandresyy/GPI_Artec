@@ -23,7 +23,8 @@ class WinAuditMapper:
             "adresse_ip": None,
             "adresse_mac": "",
             "salle":None,
-            "actif": True,
+            "etat": "EN_SERVICE",
+            "sitution":"AFFECTE",
         }
 
     def map_rapport_audit(self) -> dict[str, Any]:

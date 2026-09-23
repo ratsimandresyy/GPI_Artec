@@ -7,6 +7,7 @@ from .models import (
     Equipement,
     Plan,
     Position,
+    TicketPanne
 )
 # Register your models here.
 
@@ -55,13 +56,15 @@ class EquipementAdmin(admin.ModelAdmin):
         "nom",
         "numero_inventaire",
         "type",
+        "etat",
         "adresse_ip",
         "adresse_mac",
     )
     list_filter = (
         "type",
-        "actif",
+        "etat",
         "salle",
+        "situation",
     )
 
     search_fields = (
@@ -98,4 +101,28 @@ class PositionAdmin(admin.ModelAdmin):
     search_fields = (
         "epquipement_nom",
         "equipement_numero_inventaire",
+    )
+
+@admin.register(TicketPanne)
+class TicketPanneAdmin(admin.ModelAdmin):
+    list_display = (
+        "equipement",
+        "date_signalement",
+        "statut",
+        "date_resolution",
+    )
+
+    list_filter = (
+        "statut",
+        "date_signalement",
+    )
+
+    search_fields = (
+        "equipement__nom",
+        "equipement__numero_invntaire",
+        "description",
+    )
+
+    readonly_fields = (
+        "date_signalement",
     )
