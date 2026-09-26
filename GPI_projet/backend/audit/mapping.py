@@ -11,9 +11,12 @@ class WinAuditMapper:
             "numero_inventaire": self._get_value(
                 system,"Asset Tag",
             ),
+            #RG-E03 : un numéro de série absent est mappé sur None
+            #(et non sur une chaîne vide) afin que plusieurs matériels
+            #sans numéro de série puissent coexister.
             "numero_serie": self._get_value(
                 system, "Serial Number",
-            ),
+            ) or None,
             "fabricant": self._get_value(
                 system, "Manufacturer",
             ),
@@ -24,7 +27,7 @@ class WinAuditMapper:
             "adresse_mac": "",
             "salle":None,
             "etat": "EN_SERVICE",
-            "sitution":"AFFECTE",
+            "situation": "AFFECTE",
         }
 
     def map_rapport_audit(self) -> dict[str, Any]:

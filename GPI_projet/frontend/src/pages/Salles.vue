@@ -55,9 +55,9 @@
 
                     <button
                         class="btn-view"
-                        @click="voirSalle(salle.id)"
+                        @click="voirEquipementsSalle(salle.id)"
                     >
-                        Voir
+                        Équipements
                     </button>
 
                     <template v-if="estAdmin">
@@ -373,8 +373,8 @@ async function supprimer(salle) {
 }
 
 
-// Voir une salle
-function voirSalle(id) {
+// Voir les équipements d'une salle
+function voirEquipementsSalle(id) {
 
     console.log(
         "Salle sélectionnée :",

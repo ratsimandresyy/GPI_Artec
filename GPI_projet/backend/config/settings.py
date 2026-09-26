@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,16 +20,47 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+def variable_booleenne(nom: str, defaut: bool = False) -> bool:
+    """Convertit une variable d'environnement en booleen."""
+    valeur = os.getenv(nom)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'REDACTED'
+    if valeur is None:
+        return defaut
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+    return valeur.strip().lower() in ("1", "true", "yes", "on")
 
-ALLOWED_HOSTS = []
+
+def variable_liste(nom: str, defaut: tuple = ()) -> list:
+    """Convertit une variable d'environnement en liste separee par des virgules."""
+    valeur = os.getenv(nom)
+
+    if not valeur:
+        return list(defaut)
+
+    return [
+        element.strip()
+        for element in valeur.split(",")
+        if element.strip()
+    ]
+
+
+# SECURITY WARNING: la cle secrete n'est jamais versionnee. Elle est lue
+# depuis le fichier .env (voir .env.example pour les variables attendues).
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY est absent de l'environnement : renseignez-le dans "
+        "le fichier .env (voir .env.example)."
+    )
+
+# SECURITY WARNING: DEBUG ne doit jamais etre actif en production.
+DEBUG = variable_booleenne("DEBUG", defaut=False)
+
+ALLOWED_HOSTS = variable_liste(
+    "ALLOWED_HOSTS",
+    defaut=("localhost", "127.0.0.1"),
+)
 
 
 # Application definition
@@ -136,9 +168,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+CORS_ALLOWED_ORIGINS = variable_liste(
+    "CORS_ALLOWED_ORIGINS",
+    defaut=("http://localhost:5173",),
+)
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

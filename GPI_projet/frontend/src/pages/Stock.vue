@@ -195,271 +195,9 @@
 
                     </button>
 
-
-                    <!-- Affecter -->
-
-                    <button
-                        v-if="
-                            equipement.etat ===
-                            'EN_SERVICE'
-                        "
-                        class="button primary"
-                        @click="
-                            ouvrirFormulaireAffectation(
-                                equipement
-                            )
-                        "
-                    >
-
-                        Affecter
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Formulaire d'affectation -->
-
-        <div
-            v-if="equipementSelectionne"
-            class="modal-overlay"
-        >
-
-            <div class="modal">
-
-                <div class="modal-header">
-
-                    <div>
-
-                        <h2>
-                            Affecter l'équipement
-                        </h2>
-
-                        <p>
-                            {{ equipementSelectionne.nom }}
-                        </p>
-
-                    </div>
-
-                    <button
-                        class="close-button"
-                        @click="fermerFormulaireAffectation"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-
-                <!-- Bâtiment -->
-
-                <div class="form-group">
-
-                    <label for="batiment">
-                        Bâtiment
-                    </label>
-
-                    <select
-                        id="batiment"
-                        v-model="batimentSelectionne"
-                        @change="changerBatiment"
-                    >
-
-                        <option value="">
-                            Sélectionner un bâtiment
-                        </option>
-
-                        <option
-                            v-for="batiment in batiments"
-                            :key="batiment.id"
-                            :value="batiment.id"
-                        >
-                            {{ batiment.nom }}
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Étage -->
-
-                <div class="form-group">
-
-                    <label for="etage">
-                        Étage
-                    </label>
-
-                    <select
-                        id="etage"
-                        v-model="etageSelectionne"
-                        @change="changerEtage"
-                        :disabled="
-                            !batimentSelectionne
-                        "
-                    >
-
-                        <option value="">
-                            Sélectionner un étage
-                        </option>
-
-                        <option
-                            v-for="etage in etagesFiltres"
-                            :key="etage.id"
-                            :value="etage.id"
-                        >
-                            {{ etage.nom }}
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Salle -->
-
-                <div class="form-group">
-
-                    <label for="salle">
-                        Salle
-                    </label>
-
-                    <select
-                        id="salle"
-                        v-model="salleSelectionnee"
-                        :disabled="
-                            !etageSelectionne
-                        "
-                    >
-
-                        <option value="">
-                            Sélectionner une salle
-                        </option>
-
-                        <option
-                            v-for="salle in sallesFiltrees"
-                            :key="salle.id"
-                            :value="salle.id"
-                        >
-                            {{ salle.nom }}
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Plan -->
-
-                <div class="form-group">
-
-                    <label for="plan">
-                        Plan
-                    </label>
-
-                    <select
-                        id="plan"
-                        v-model="planSelectionne"
-                        :disabled="
-                            !etageSelectionne
-                        "
-                    >
-
-                        <option value="">
-                            Sélectionner un plan
-                        </option>
-
-                        <option
-                            v-for="plan in plansFiltres"
-                            :key="plan.id"
-                            :value="plan.id"
-                        >
-                            Plan de {{ nomEtage(plan.etage) }}
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Coordonnées -->
-
-                <div class="coordinates">
-
-                    <div class="form-group">
-
-                        <label for="x">
-                            Position X
-                        </label>
-
-                        <input
-                            id="x"
-                            v-model.number="positionX"
-                            type="number"
-                            min="0"
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="y">
-                            Position Y
-                        </label>
-
-                        <input
-                            id="y"
-                            v-model.number="positionY"
-                            type="number"
-                            min="0"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <!-- Erreur du formulaire -->
-
-                <p
-                    v-if="formError"
-                    class="error"
-                >
-                    {{ formError }}
-                </p>
-
-
-                <!-- Actions du formulaire -->
-
-                <div class="modal-actions">
-
-                    <button
-                        class="button secondary"
-                        @click="
-                            fermerFormulaireAffectation
-                        "
-                    >
-                        Annuler
-                    </button>
-
-                    <button
-                        class="button primary"
-                        :disabled="affectationEnCours"
-                        @click="affecter"
-                    >
-
-                        {{
-                            affectationEnCours
-                                ? "Affectation..."
-                                : "Affecter l'équipement"
-                        }}
-
-                    </button>
+                    <p class="info-affectation">
+                        Pour affecter un équipement, utilisez le drag & drop sur le plan graphique.
+                    </p>
 
                 </div>
 
@@ -486,24 +224,7 @@ import {
 
 import {
     terminerMaintenance,
-    affecterEquipement,
 } from "../services/stockService";
-
-import {
-    getBatiments,
-} from "../services/batimentService";
-
-import {
-    getEtages,
-} from "../services/etageService";
-
-import {
-    getSalles,
-} from "../services/salleService";
-
-import {
-    getPlans,
-} from "../services/localisationService";
 
 
 // --------------------------------------------------
@@ -511,12 +232,6 @@ import {
 // --------------------------------------------------
 
 const equipements = ref([]);
-
-const batiments = ref([]);
-const etages = ref([]);
-const salles = ref([]);
-const plans = ref([]);
-
 
 
 // --------------------------------------------------
@@ -527,33 +242,6 @@ const loading = ref(false);
 const errorMessage = ref("");
 
 const actionEnCours = ref(null);
-
-
-
-// --------------------------------------------------
-// Équipement sélectionné
-// --------------------------------------------------
-
-const equipementSelectionne = ref(null);
-
-const affectationEnCours = ref(false);
-
-const formError = ref("");
-
-
-
-// --------------------------------------------------
-// Sélections du formulaire
-// --------------------------------------------------
-
-const batimentSelectionne = ref("");
-const etageSelectionne = ref("");
-const salleSelectionnee = ref("");
-const planSelectionne = ref("");
-
-const positionX = ref(0);
-const positionY = ref(0);
-
 
 
 // --------------------------------------------------
@@ -570,7 +258,6 @@ const equipementsStock = computed(() => {
 });
 
 
-
 // --------------------------------------------------
 // Statistiques
 // --------------------------------------------------
@@ -584,7 +271,6 @@ const nombreEnMaintenance = computed(() => {
 
 });
 
-
 const nombrePrets = computed(() => {
 
     return equipementsStock.value.filter(
@@ -593,67 +279,6 @@ const nombrePrets = computed(() => {
     ).length;
 
 });
-
-
-
-// --------------------------------------------------
-// Filtrage des étages
-// --------------------------------------------------
-
-const etagesFiltres = computed(() => {
-
-    if (!batimentSelectionne.value) {
-        return [];
-    }
-
-    return etages.value.filter(
-        (etage) =>
-            String(etage.batiment) ===
-            String(batimentSelectionne.value)
-    );
-
-});
-
-
-
-// --------------------------------------------------
-// Filtrage des salles
-// --------------------------------------------------
-
-const sallesFiltrees = computed(() => {
-
-    if (!etageSelectionne.value) {
-        return [];
-    }
-
-    return salles.value.filter(
-        (salle) =>
-            String(salle.etage) ===
-            String(etageSelectionne.value)
-    );
-
-});
-
-
-
-// --------------------------------------------------
-// Filtrage des plans
-// --------------------------------------------------
-
-const plansFiltres = computed(() => {
-
-    if (!etageSelectionne.value) {
-        return [];
-    }
-
-    return plans.value.filter(
-        (plan) =>
-            String(plan.etage) ===
-            String(etageSelectionne.value)
-    );
-
-});
-
 
 
 // --------------------------------------------------
@@ -667,28 +292,7 @@ async function chargerDonnees() {
 
     try {
 
-        const [
-            donneesEquipements,
-            donneesBatiments,
-            donneesEtages,
-            donneesSalles,
-            donneesPlans,
-        ] = await Promise.all([
-
-            getEquipementsDashboard(),
-            getBatiments(),
-            getEtages(),
-            getSalles(),
-            getPlans(),
-
-        ]);
-
-        equipements.value = donneesEquipements;
-
-        batiments.value = donneesBatiments;
-        etages.value = donneesEtages;
-        salles.value = donneesSalles;
-        plans.value = donneesPlans;
+        equipements.value = await getEquipementsDashboard();
 
     } catch (error) {
 
@@ -706,7 +310,6 @@ async function chargerDonnees() {
 }
 
 
-
 // --------------------------------------------------
 // Terminer la maintenance
 // --------------------------------------------------
@@ -719,15 +322,10 @@ async function terminerMaintenanceEquipement(
     errorMessage.value = "";
 
     try {
+        await terminerMaintenance(equipement.id);
 
-        const equipementModifie =
-            await terminerMaintenance(
-                equipement.id
-            );
-
-        remplacerEquipement(
-            equipementModifie
-        );
+        // Recharger les données
+        await chargerDonnees();
 
     } catch (error) {
 
@@ -746,297 +344,48 @@ async function terminerMaintenanceEquipement(
 }
 
 
-
 // --------------------------------------------------
-// Ouvrir le formulaire d'affectation
-// --------------------------------------------------
-
-function ouvrirFormulaireAffectation(
-    equipement
-) {
-
-    equipementSelectionne.value =
-        equipement;
-
-    formError.value = "";
-
-    batimentSelectionne.value = "";
-    etageSelectionne.value = "";
-    salleSelectionnee.value = "";
-    planSelectionne.value = "";
-
-    positionX.value = 0;
-    positionY.value = 0;
-
-}
-
-
-
-// --------------------------------------------------
-// Fermer le formulaire
+// Affichage conditionnel
 // --------------------------------------------------
 
-function fermerFormulaireAffectation() {
+function afficherCondition(condition) {
 
-    equipementSelectionne.value =
-        null;
-
-    formError.value = "";
-
-}
-
-
-
-// --------------------------------------------------
-// Changement de bâtiment
-// --------------------------------------------------
-
-function changerBatiment() {
-
-    etageSelectionne.value = "";
-    salleSelectionnee.value = "";
-    planSelectionne.value = "";
-
-}
-
-
-
-// --------------------------------------------------
-// Changement d'étage
-// --------------------------------------------------
-
-function changerEtage() {
-
-    salleSelectionnee.value = "";
-    planSelectionne.value = "";
-
-}
-
-
-
-// --------------------------------------------------
-// Affectation
-// --------------------------------------------------
-
-async function affecter() {
-
-    formError.value = "";
-
-    if (!salleSelectionnee.value) {
-
-        formError.value =
-            "Veuillez sélectionner une salle.";
-
-        return;
-
-    }
-
-    if (!planSelectionne.value) {
-
-        formError.value =
-            "Veuillez sélectionner un plan.";
-
-        return;
-
-    }
-
-    if (
-        positionX.value === null ||
-        positionY.value === null
-    ) {
-
-        formError.value =
-            "Les coordonnées X et Y sont obligatoires.";
-
-        return;
-
-    }
-
-    affectationEnCours.value = true;
-
-    try {
-
-        const equipementModifie =
-            await affecterEquipement(
-
-                equipementSelectionne.value.id,
-
-                salleSelectionnee.value,
-
-                planSelectionne.value,
-
-                positionX.value,
-
-                positionY.value,
-
-            );
-
-        remplacerEquipement(
-            equipementModifie
-        );
-
-        fermerFormulaireAffectation();
-
-    } catch (error) {
-
-        console.error(error);
-
-        formError.value =
-            error.response?.data?.detail ||
-            "Impossible d'affecter l'équipement.";
-
-    } finally {
-
-        affectationEnCours.value = false;
-
-    }
-
-}
-
-
-
-// --------------------------------------------------
-// Remplace un équipement dans la liste
-// --------------------------------------------------
-
-function remplacerEquipement(
-    equipementModifie
-) {
-
-    const index =
-        equipements.value.findIndex(
-            (equipement) =>
-                equipement.id ===
-                equipementModifie.id
-        );
-
-    if (index !== -1) {
-
-        equipements.value[index] =
-            equipementModifie;
-
-    }
-
-}
-
-
-
-// --------------------------------------------------
-// Affichage de la condition
-// --------------------------------------------------
-
-function afficherCondition(
-    condition
-) {
+    if (!condition) return "-";
 
     const conditions = {
-
-        NEUF: "Neuf",
-
-        OCCASION: "Occasion",
-
-        RECONDITIONNE:
-            "Reconditionné",
-
+        "NEUF": "Neuf",
+        "OCCASION": "Occasion",
+        "RECONDITIONNE": "Reconditionné",
     };
 
-    return (
-        conditions[condition] ||
-        condition ||
-        "Non renseignée"
-    );
+    return conditions[condition] || condition;
 
 }
 
 
-
-// --------------------------------------------------
-// Affichage de l'état
-// --------------------------------------------------
-
-function afficherEtat(
-    etat
-) {
+function afficherEtat(etat) {
 
     const etats = {
-
-        EN_SERVICE: "En service",
-
-        EN_MAINTENANCE:
-            "En maintenance",
-
-        HORS_SERVICE:
-            "Hors service",
-
+        "EN_SERVICE": "En service",
+        "EN_MAINTENANCE": "En maintenance",
+        "EN_PANNE": "En panne",
+        "HORS_SERVICE": "Hors service",
     };
 
-    return (
-        etats[etat] ||
-        etat ||
-        "Inconnu"
-    );
+    return etats[etat] || etat;
 
 }
 
 
+function classeEtat(etat) {
 
-// --------------------------------------------------
-// Classe CSS selon l'état
-// --------------------------------------------------
-
-function classeEtat(
-    etat
-) {
-
-    return {
-
-        "status-maintenance":
-            etat === "EN_MAINTENANCE",
-
-        "status-service":
-            etat === "EN_SERVICE",
-
-        "status-hors-service":
-            etat === "HORS_SERVICE",
-
-    };
+    return `status-${etat.toLowerCase()}`;
 
 }
 
-
-
-// --------------------------------------------------
-// Nom d'un étage
-// --------------------------------------------------
-
-function nomEtage(
-    etageId
-) {
-
-    const etage =
-        etages.value.find(
-            (item) =>
-                String(item.id) ===
-                String(etageId)
-        );
-
-    return (
-        etage?.nom ||
-        `Étage ${etageId}`
-    );
-
-}
-
-
-
-// --------------------------------------------------
-// Initialisation
-// --------------------------------------------------
 
 onMounted(() => {
-
     chargerDonnees();
-
 });
 
 </script>
@@ -1045,19 +394,17 @@ onMounted(() => {
 <style scoped>
 
 .page {
-    width: 100%;
+    padding: 30px;
 }
 
 
 .page-header {
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
-
 
 .page-header h1 {
-    margin-bottom: 5px;
+    margin: 0 0 5px 0;
 }
-
 
 .page-header p {
     margin: 0;
@@ -1068,12 +415,11 @@ onMounted(() => {
 .summary {
     display: grid;
 
-    grid-template-columns:
-        repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr);
 
     gap: 20px;
 
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
 
 
@@ -1086,43 +432,38 @@ onMounted(() => {
 
     border-radius: 10px;
 
-    display: flex;
+    text-align: center;
+}
 
-    flex-direction: column;
 
-    gap: 8px;
+.summary-label {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: #666;
+
+    font-size: 14px;
 }
 
 
 .summary-card strong {
     font-size: 28px;
-}
 
-
-.summary-label {
-    color: #666;
+    color: #333;
 }
 
 
 .stock-container {
-    display: flex;
+    display: grid;
 
-    flex-direction: column;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
 
-    gap: 15px;
+    gap: 20px;
 }
 
 
 .stock-card {
-    display: grid;
-
-    grid-template-columns:
-        1fr auto auto;
-
-    gap: 25px;
-
-    align-items: center;
-
     padding: 20px;
 
     background: white;
@@ -1130,26 +471,30 @@ onMounted(() => {
     border: 1px solid #ddd;
 
     border-radius: 10px;
+
+    display: grid;
+
+    grid-template-columns: 1fr auto;
+
+    gap: 20px;
+
+    align-items: center;
 }
 
 
 .equipment-info h2 {
-    margin-top: 0;
-
-    margin-bottom: 10px;
+    margin: 0 0 10px 0;
+    font-size: 18px;
 }
 
 
 .equipment-info p {
     margin: 5px 0;
-
-    color: #555;
+    font-size: 14px;
 }
 
 
 .equipment-status {
-    min-width: 140px;
-
     text-align: center;
 }
 
@@ -1191,7 +536,16 @@ onMounted(() => {
 .equipment-actions {
     display: flex;
 
+    flex-direction: column;
+
     gap: 10px;
+}
+
+.info-affectation {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    margin-top: 10px;
 }
 
 
@@ -1210,21 +564,18 @@ onMounted(() => {
 
 .button:disabled {
     opacity: 0.6;
-
     cursor: not-allowed;
 }
 
 
 .button.primary {
     background: #333;
-
     color: white;
 }
 
 
 .button.secondary {
     background: #eee;
-
     color: #333;
 }
 
@@ -1236,150 +587,17 @@ onMounted(() => {
 
 .error {
     margin-bottom: 15px;
-
     color: #b00020;
 }
 
 
 .empty {
     padding: 50px;
-
     text-align: center;
-
     color: #666;
-
     background: white;
-
     border: 1px solid #ddd;
-
     border-radius: 10px;
-}
-
-
-/* Modal */
-
-.modal-overlay {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 1000;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    background: rgba(0, 0, 0, 0.45);
-}
-
-
-.modal {
-    width: 100%;
-
-    max-width: 600px;
-
-    max-height: 90vh;
-
-    overflow-y: auto;
-
-    padding: 25px;
-
-    background: white;
-
-    border-radius: 12px;
-
-    box-sizing: border-box;
-}
-
-
-.modal-header {
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: flex-start;
-
-    margin-bottom: 20px;
-}
-
-
-.modal-header h2 {
-    margin: 0 0 5px 0;
-}
-
-
-.modal-header p {
-    margin: 0;
-
-    color: #666;
-}
-
-
-.close-button {
-    border: none;
-
-    background: none;
-
-    font-size: 28px;
-
-    cursor: pointer;
-
-    color: #666;
-}
-
-
-.form-group {
-    display: flex;
-
-    flex-direction: column;
-
-    margin-bottom: 15px;
-}
-
-
-.form-group label {
-    margin-bottom: 6px;
-
-    font-weight: 600;
-}
-
-
-.form-group select,
-.form-group input {
-    padding: 10px;
-
-    border: 1px solid #ccc;
-
-    border-radius: 6px;
-
-    background: white;
-
-    box-sizing: border-box;
-}
-
-
-.coordinates {
-    display: grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    gap: 15px;
-}
-
-
-.modal-actions {
-    display: flex;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    margin-top: 20px;
 }
 
 
@@ -1390,25 +608,13 @@ onMounted(() => {
             1fr;
     }
 
-
     .stock-card {
         grid-template-columns:
             1fr;
     }
 
-
     .equipment-status {
         text-align: left;
-    }
-
-}
-
-
-@media (max-width: 600px) {
-
-    .coordinates {
-        grid-template-columns:
-            1fr;
     }
 
 }

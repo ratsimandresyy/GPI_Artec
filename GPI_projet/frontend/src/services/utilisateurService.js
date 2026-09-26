@@ -10,6 +10,16 @@ export async function getUtilisateur(id) {
     return response.data;
 }
 
+export async function getMonProfil() {
+    const response = await api.get("/auth/users/me/");
+    return response.data;
+}
+
+export async function modifierMonProfil(donnees) {
+    const response = await api.put("/auth/users/me/", donnees);
+    return response.data;
+}
+
 export async function creerUtilisateur(donnees) {
     const response = await api.post("/auth/users/", donnees);
     return response.data;

@@ -1,0 +1,14 @@
+Audit de l'Ordinateur :: 20/03/2021 08:15:00
+
+Résumé du Système
+-------------------
+| Item | Value |
+| Computer Name | AD2 |
+| Asset Tag | INV-2021-002 |
+| Manufacturer | HP |
+| Model | ProDesk 400 G6 |
+| Operating System | Windows 10 Professionnel |
+| Processor Description | Intel Core i3-9100 |
+| Total Memory | 4,00 Go |
+| Total Hard Drive | 128,00 Go |
+| BIOS Version | 2.4.1 |

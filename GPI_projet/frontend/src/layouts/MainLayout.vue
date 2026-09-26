@@ -21,7 +21,7 @@
                             <router-link to="/dashboard">Dashboard</router-link>
                         </li>
                         <li>
-                            <router-link v-if="estAdmin" to="/utilisateurs">Utilisateur</router-link>
+                            <router-link v-if="estAdmin" to="/utilisateurs">Utilisateurs</router-link>
                         </li>
 
                         <li>
@@ -40,12 +40,20 @@
                             <router-link to="/audits">Audits</router-link>
                         </li>
 
+                        <li v-if="estAdmin">
+                            <router-link to="/tickets">Tickets</router-link>
+                        </li>
+
                     </ul>
                 </nav>
 
 
                 <!-- Déconnexion -->
                 <div class="sidebar-bottom">
+
+                    <router-link to="/profile" class="profile-link">
+                        Mon profil
+                    </router-link>
 
                     <button type="button" @click="seDeconnecter">Déconnexion</button>
                 </div>
@@ -61,6 +69,8 @@
 
         </div>
 
+        <NotificationToast />
+
     </div>
 </template>
 
@@ -72,6 +82,8 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 
 import { computed } from "vue";
+
+import NotificationToast from "../components/NotificationToast.vue";
 
 
 const router = useRouter();
@@ -199,6 +211,18 @@ function seDeconnecter() {
     padding: 10px;
 
     cursor: pointer;
+}
+
+.profile-link {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.profile-link:hover {
+    background: #f0f0f0;
 }
 
 

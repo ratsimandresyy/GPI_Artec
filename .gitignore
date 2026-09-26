@@ -1,0 +1,65 @@
+# =============================================
+# GPI - Gestion du Parc Informatique
+# .gitignore racine (backend Django + frontend Vue)
+# =============================================
+
+# --- Secrets / variables d'environnement ---
+.env
+.env.*
+*.env.local
+!.env.example
+
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+MANIFEST
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# --- Environnements virtuels ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Fichiers générés / uploadés ---
+GPI_projet/backend/media/
+GPI_projet/backend/staticfiles/
+build/
+dist/
+
+# --- Tests / couverture ---
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+nosetests.xml
+
+# --- Node / Vue / Vite ---
+node_modules/
+GPI_projet/frontend/dist/
+GPI_projet/frontend/dist-ssr/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# --- IDE / OS ---
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini

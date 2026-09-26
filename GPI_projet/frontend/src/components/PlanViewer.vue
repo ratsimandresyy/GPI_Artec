@@ -43,7 +43,10 @@
                 class="equipement-marker"
                 :class="{
                     'marker-selected':
-                        positionSelectionnee?.id === position.id
+                        positionSelectionnee?.id === position.id,
+                    'marker-highlighted':
+                        props.equipementAMettreEnEvidence &&
+                        String(position.equipement) === String(props.equipementAMettreEnEvidence)
                 }"
                 :style="{
                     left: position.x + 'px',
@@ -301,6 +304,11 @@ const props = defineProps({
         default: () => [],
     },
 
+    equipements: {
+        type: Array,
+        default: () => [],
+    },
+
     /*
      * Seul un administrateur peut déplacer
      * les équipements.
@@ -308,6 +316,14 @@ const props = defineProps({
     estAdmin: {
         type: Boolean,
         default: false,
+    },
+
+    /*
+     * ID de l'équipement à mettre en évidence
+     */
+    equipementAMettreEnEvidence: {
+        type: Number,
+        default: null,
     },
 
 });
@@ -333,22 +349,6 @@ const positionsLocales = ref([]);
 /*
  * Synchronisation avec les positions
  * reçues depuis Localisation.vue.
- */
-watch(
-    () => props.plan,
-    async (nouveauPlan) => {
-        if (!nouveauPlan) {
-            salles.value = [];
-            return;
-        }
-
-        await chargerSalles();
-    },
-    { immediate: true }
-);
-
-/*
- * Référence vers le conteneur du plan.
  */
 const planWrapper = ref(null);
 
@@ -436,37 +436,47 @@ const affectationEnCours = ref(false);
 const messageAffectation = ref("");
 
 /*
- * Commence le déplacement.
+ * Watch sur le plan pour charger les positions
  */
-function commencerDeplacement(
-    position,
-    event
-) {
+watch(
+    () => props.plan,
+    async (nouveauPlan) => {
+        if (!nouveauPlan) {
+            positionsLocales.value = [];
+            return;
+        }
 
-    /*
-     * Un utilisateur normal peut consulter
-     * mais ne peut pas déplacer.
-     */
+        if (props.positions && props.positions.length > 0) {
+            // Si les positions sont passées en prop, les utiliser
+            positionsLocales.value = props.positions.filter(
+                (position) => String(position.plan) === String(nouveauPlan.id)
+            );
+        } else {
+            // Sinon, les charger depuis l'API
+            try {
+                const positions = await getPositionsParPlan(nouveauPlan.id);
+                positionsLocales.value = positions;
+            } catch (error) {
+                console.error("Erreur lors du chargement des positions:", error);
+                positionsLocales.value = [];
+            }
+        }
+    },
+    { immediate: true }
+);
+
+/*
+ * Commence le déplacement d'un équipement.
+ */
+function commencerDeplacement(position, event) {
     if (!props.estAdmin) {
         return;
     }
 
     positionSelectionnee.value = position;
-
-    anciennePosition.value = {
-        x: position.x,
-        y: position.y,
-    };
-
+    anciennePosition.value = { x: position.x, y: position.y };
     deplacementEnCours.value = true;
-
-    messageSauvegarde.value = "";
-    sauvegardeReussie.value = false;
-
-    event.preventDefault();
-
 }
-
 
 /*
  * Déplacement visuel du marqueur.
@@ -869,27 +879,6 @@ async function deposerEquipementDansStock() {
     }
 }
 
-async function chargerSalles() {
-    chargementSalles.value = true;
-
-    try {
-        const toutesLesSalles = await getSallesDashboard();
-
-        salles.value = toutesLesSalles.filter(
-            (salle) =>
-                String(salle.etage) ===
-                String(props.plan?.etage)
-        );
-    } catch (error) {
-        console.error(
-            "Erreur lors du chargement des salles :",
-            error
-        );
-    } finally {
-        chargementSalles.value = false;
-    }
-}
-
 async function confirmerAffectation() {
     if (!equipementEnAttente.value) return;
 
@@ -1022,6 +1011,19 @@ function annulerAffectation() {
     z-index: 20;
 }
 
+.marker-highlighted {
+    z-index: 20;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+}
 
 .marker-point {
     font-size: 25px;

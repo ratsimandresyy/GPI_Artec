@@ -27,13 +27,19 @@ export async function getTicket(ticketId) {
  */
 export async function creerTicket(
     equipementId,
-    description
+    titre,
+    description,
+    type = "MAINTENANCE",
+    priorite = "NORMALE"
 ) {
     const response = await api.post(
         "/inventaire/tickets-panne/",
         {
             equipement: equipementId,
+            titre,
             description,
+            type,
+            priorite,
         }
     );
 
@@ -43,6 +49,20 @@ export async function creerTicket(
 export async function prendreEnChargeTicket(ticketId) {
     const response = await api.post(
         `/inventaire/tickets-panne/${ticketId}/prendre-en-charge/`
+    );
+
+    return response.data;
+}
+
+/**
+ * Résout un ticket.
+ */
+export async function resoudreTicket(ticketId, commentaireResolution) {
+    const response = await api.post(
+        `/inventaire/tickets-panne/${ticketId}/resoudre/`,
+        {
+            commentaire_resolution: commentaireResolution,
+        }
     );
 
     return response.data;

@@ -36,20 +36,41 @@ class BatimentViewSet(viewsets.ModelViewSet):
     serializer_class = BatimentSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
+
 class EtageViewSet(viewsets.ModelViewSet):
     queryset = Etage.objects.all()
     serializer_class = EtageSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
 
 class SalleViewSet(viewsets.ModelViewSet):
     queryset = Salle.objects.all()
     serializer_class = SalleSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
+
 class EquipementViewSet(viewsets.ModelViewSet):
     queryset = Equipement.objects.all()
     serializer_class = EquipementSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
+
+    def get_permissions(self):
+        # Autoriser l'accès public en lecture seule pour les visiteurs
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
 
     @action(
         detail = False,
@@ -217,6 +238,11 @@ class PlanViewSet(viewsets.ModelViewSet):
     serializer_class = PlanSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
+
 class PositionViewSet(viewsets.ModelViewSet):
     """
     API de gestion des positions des équipements.
@@ -233,6 +259,11 @@ class PositionViewSet(viewsets.ModelViewSet):
 
     serializer_class = PositionDetailSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return []
+        return [permission() for permission in self.permission_classes]
 
     @action(
         detail=False,
@@ -419,12 +450,29 @@ class PositionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
+    def create(self, request, *args, **kwargs):
+        """
+        La creation d'une position passe par LocalisationService.
+
+        RG-P06, RG-P07 et RG-P08 ne doivent pas pouvoir etre contournees
+        par une creation directe sur /positions/ : la regle metier reste
+        centralisee dans le service.
+        """
+        return self.localiser(request)
+
 class TicketPanneViewSet(viewsets.ModelViewSet):
     queryset = TicketPanne.objects.select_related("equipement").all()
     serializer_class = TicketPanneSerializer
 
     def get_permissions(self):
-        if self.action in ("prendre_en_charge", "resoudre"):
+        if self.action == "create":
+            # Création de ticket publique (sans authentification)
+            permission_classes = []
+        elif self.action in (
+            "prendre_en_charge",
+            "resoudre",
+            "qualifier",
+        ):
             permission_classes = [IsAdministrateurOrReadOnly]
         else:
             permission_classes = [IsUserOrAdministrateur]
@@ -450,7 +498,10 @@ class TicketPanneViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
 
         equipement_id = request.data.get("equipement")
+        titre = request.data.get("titre", "")
         description = request.data.get("description")
+        type_ticket = request.data.get("type", "MAINTENANCE")
+        priorite = request.data.get("priorite", "NORMALE")
 
         #vérification de la présence des données nécessaires
         if not equipement_id or not description:
@@ -467,13 +518,19 @@ class TicketPanneViewSet(viewsets.ModelViewSet):
         except Equipement.DoesNotExist:
             return Response(
                 {
-                    "détail": "L'équipement demandé n'existe pas."
+                    "detail": "L'équipement demandé n'existe pas."
                 },
                 status = status.HTTP_404_NOT_FOUND,
             )
 
         #la logique métier es centralisé dans le service
-        ticket = PanneService.declarer_panne(equipement=equipement, description=description)
+        ticket = PanneService.declarer_panne(
+            equipement=equipement,
+            titre=titre,
+            description=description,
+            type=type_ticket,
+            priorite=priorite,
+        )
 
         #Sérialisation du ticket créé
         serializer = self.get_serializer(ticket)
@@ -496,7 +553,7 @@ class TicketPanneViewSet(viewsets.ModelViewSet):
             ticket = PanneService.prendre_en_charge(ticket)
         except ValueError as e:
             return Response(
-                {"détail": str(e)},
+                {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -523,22 +580,67 @@ class TicketPanneViewSet(viewsets.ModelViewSet):
         if not commentaire:
             return Response(
                 {
-                    "détail": (
-                        "Le commentaire de résolution"
+                    "detail": (
+                        "Le commentaire de résolution "
                         "est obligatoire."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        #L'etat final du materiel depend du diagnostic
+        #(diagramme d'activite) : EN_SERVICE si le materiel est repare,
+        #HORS_SERVICE sinon.
+        etat_final = request.data.get(
+            "etat_final",
+            "EN_SERVICE",
+        )
+
         try:
-            ticket=PanneService.resoudre_ticket(
+            ticket = PanneService.resoudre_ticket(
                 ticket=ticket,
                 commentaire_resolution=commentaire,
+                etat_final=etat_final,
             )
         except ValueError as e:
             return Response(
-                {"détail" : str(e)},
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(ticket)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="qualifier",
+    )
+
+    def qualifier(self, request, pk=None):
+        """
+        Qualifie un ticket : type et/ou priorite.
+
+        Diagramme d'activite : "Qualifier le ticket : definir le type,
+        definir la priorite". La modification directe du ticket reste
+        interdite (les transitions de statut passent par les actions
+        prendre-en-charge et resoudre).
+        """
+        ticket = self.get_object()
+
+        try:
+            ticket = PanneService.qualifier_ticket(
+                ticket=ticket,
+                type=request.data.get("type"),
+                priorite=request.data.get("priorite"),
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

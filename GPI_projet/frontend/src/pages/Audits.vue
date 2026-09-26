@@ -9,12 +9,29 @@
                 </p>
             </div>
 
-            <button
-                class="btn-refresh"
-                @click="chargerAudits"
-            >
-                Actualiser
-            </button>
+            <div class="header-actions">
+                <select
+                    v-model="filtreEquipement"
+                    @change="filtrerAudits"
+                    class="filter-select"
+                >
+                    <option value="">Tous les équipements</option>
+                    <option
+                        v-for="equipement in equipementsUniques"
+                        :key="equipement"
+                        :value="equipement"
+                    >
+                        {{ equipement }}
+                    </option>
+                </select>
+
+                <button
+                    class="btn-refresh"
+                    @click="chargerAudits"
+                >
+                    Actualiser
+                </button>
+            </div>
         </div>
 
 
@@ -29,7 +46,7 @@
 
 
         <div
-            v-else-if="audits.length === 0"
+            v-else-if="auditsFiltres.length === 0"
             class="message"
         >
             Aucun rapport d'audit disponible.
@@ -43,7 +60,7 @@
             <div class="audit-list">
 
                 <div
-                    v-for="audit in audits"
+                    v-for="audit in auditsFiltres"
                     :key="audit.id"
                     class="audit-card"
                     :class="{
@@ -160,6 +177,25 @@
 
                 </div>
 
+                <div class="detail-section">
+
+                    <h3>Données brutes</h3>
+
+                    <button
+                        type="button"
+                        class="toggle-button"
+                        @click="afficherDonneesBrutes = !afficherDonneesBrutes"
+                    >
+                        {{ afficherDonneesBrutes ? "Masquer" : "Afficher" }} les données brutes
+                    </button>
+
+                    <pre
+                        v-if="afficherDonneesBrutes"
+                        class="json-display"
+                    >{{ formatJSON(auditSelectionne.donnees_brutes) }}</pre>
+
+                </div>
+
             </div>
 
         </div>
@@ -179,11 +215,19 @@ import {
 
 const audits = ref([]);
 
+const auditsFiltres = ref([]);
+
 const auditSelectionne = ref(null);
 
 const chargement = ref(false);
 
 const erreur = ref("");
+
+const filtreEquipement = ref("");
+
+const afficherDonneesBrutes = ref(false);
+
+const equipementsUniques = ref([]);
 
 
 async function chargerAudits() {
@@ -195,15 +239,25 @@ async function chargerAudits() {
     try {
 
         audits.value = await getRapportsAudit();
+        auditsFiltres.value = [...audits.value];
+
+        // Extraire les équipements uniques pour le filtre
+        equipementsUniques.value = [
+            ...new Set(
+                audits.value
+                    .map(a => a.equipement_nom)
+                    .filter(n => n)
+            )
+        ].sort();
 
         /*
          * Sélectionne automatiquement
          * le premier audit.
          */
-        if (audits.value.length > 0) {
+        if (auditsFiltres.value.length > 0) {
 
             auditSelectionne.value =
-                audits.value[0];
+                auditsFiltres.value[0];
 
         }
 
@@ -222,6 +276,27 @@ async function chargerAudits() {
         chargement.value = false;
 
     }
+}
+
+function filtrerAudits() {
+    if (!filtreEquipement.value) {
+        auditsFiltres.value = [...audits.value];
+    } else {
+        auditsFiltres.value = audits.value.filter(
+            audit => audit.equipement_nom === filtreEquipement.value
+        );
+    }
+
+    if (auditsFiltres.value.length > 0) {
+        auditSelectionne.value = auditsFiltres.value[0];
+    } else {
+        auditSelectionne.value = null;
+    }
+}
+
+function formatJSON(obj) {
+    if (!obj) return "{}";
+    return JSON.stringify(obj, null, 2);
 }
 
 
@@ -298,6 +373,17 @@ onMounted(() => {
 
 }
 
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
 
 .btn-refresh {
 
@@ -429,6 +515,27 @@ onMounted(() => {
 
 }
 
+.toggle-button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.toggle-button:hover {
+    background: #f0f0f0;
+}
+
+.json-display {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.4;
+}
 
 .message {
 

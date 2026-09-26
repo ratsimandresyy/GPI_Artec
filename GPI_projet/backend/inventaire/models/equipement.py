@@ -49,10 +49,14 @@ class Equipement(models.Model):
         unique = True,
     )
 
+    #RG-E03 : le numéro de série est unique lorsqu'il est renseigné.
+    #Une chaîne vide violerait la contrainte d'unicité, d'où null=True :
+    #plusieurs NULL sont autorisés par la base de données.
     numero_serie = models.CharField(
         max_length = 100,
         unique = True,
         blank = True,
+        null = True,
     )
 
     adresse_ip = models.GenericIPAddressField(

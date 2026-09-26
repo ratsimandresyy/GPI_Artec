@@ -260,3 +260,91 @@ class LocalisationAPITest(TestCase):
                 equipement=self.equipement
             ).exists()
         )
+
+    def test_creation_directe_de_position_passe_par_le_service(self):
+        """
+        RG-P06 : la création directe d'une position ne doit pas permettre
+        de localiser un matériel qui n'est pas affecté.
+        """
+        self.equipement.situation = "EN_STOCK"
+        self.equipement.condition_stock = "NEUF"
+        self.equipement.save()
+
+        response = self.client.post(
+            "/api/inventaire/positions/",
+            {
+                "equipement": self.equipement.id,
+                "plan": self.plan_1.id,
+                "x": 200,
+                "y": 300,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        self.assertFalse(
+            Position.objects.filter(
+                equipement=self.equipement
+            ).exists()
+        )
+
+    def test_creation_directe_hors_limites_du_plan_refusee(self):
+        """
+        RG-P07 : les coordonnées doivent rester dans les limites du plan,
+        y compris par une création directe.
+        """
+        response = self.client.post(
+            "/api/inventaire/positions/",
+            {
+                "equipement": self.equipement.id,
+                "plan": self.plan_1.id,
+                "x": 5000,
+                "y": 300,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        self.assertFalse(Position.objects.exists())
+
+    def test_creation_directe_dans_un_autre_etage_refusee(self):
+        """
+        RG-P08 : la salle de l'équipement et le plan utilisé doivent
+        appartenir au même étage.
+        """
+        response = self.client.post(
+            "/api/inventaire/positions/",
+            {
+                "equipement": self.equipement.id,
+                "plan": self.plan_2.id,
+                "x": 200,
+                "y": 300,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        self.assertFalse(Position.objects.exists())
+
+    def test_creation_directe_valide_est_acceptee(self):
+        """
+        La création directe reste possible lorsque les règles métier
+        sont respectées (elle délègue à LocalisationService).
+        """
+        response = self.client.post(
+            "/api/inventaire/positions/",
+            {
+                "equipement": self.equipement.id,
+                "plan": self.plan_1.id,
+                "x": 200,
+                "y": 300,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+        self.assertEqual(Position.objects.count(), 1)

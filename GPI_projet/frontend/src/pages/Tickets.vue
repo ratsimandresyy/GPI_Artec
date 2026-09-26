@@ -9,7 +9,6 @@
             </div>
 
             <button
-                v-if="estAdmin"
                 @click="ouvrirCreation"
             >
                 Nouveau ticket
@@ -48,6 +47,52 @@
                     -
                     {{ equipement.numero_inventaire }}
                 </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="titre">
+                    Titre
+                </label>
+
+                <input
+                    id="titre"
+                    v-model="titre"
+                    type="text"
+                    placeholder="Titre du ticket..."
+                    :disabled="creationEnCours"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="type">
+                    Type
+                </label>
+
+                <select
+                    id="type"
+                    v-model="type"
+                    :disabled="creationEnCours"
+                >
+                    <option value="MAINTENANCE">Maintenance</option>
+                    <option value="RECLAMATION">Réclamation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="priorite">
+                    Priorité
+                </label>
+
+                <select
+                    id="priorite"
+                    v-model="priorite"
+                    :disabled="creationEnCours"
+                >
+                    <option value="BASSE">Basse</option>
+                    <option value="NORMALE">Normale</option>
+                    <option value="HAUTE">Haute</option>
+                    <option value="CRITIQUE">Critique</option>
                 </select>
             </div>
 
@@ -121,15 +166,31 @@
             >
                 <div class="ticket-header">
                     <strong>
-                        Ticket #{{ ticket.id }}
+                        #{{ ticket.id }} - {{ ticket.titre }}
                     </strong>
 
-                    <span
-                        class="statut"
-                        :class="`statut-${ticket.statut.toLowerCase()}`"
-                    >
-                        {{ ticket.statut }}
-                    </span>
+                    <div class="ticket-meta">
+                        <span
+                            class="statut"
+                            :class="`statut-${ticket.statut.toLowerCase()}`"
+                        >
+                            {{ ticket.statut }}
+                        </span>
+
+                        <span
+                            class="type"
+                            :class="`type-${ticket.type.toLowerCase()}`"
+                        >
+                            {{ ticket.type }}
+                        </span>
+
+                        <span
+                            class="priorite"
+                            :class="`priorite-${ticket.priorite.toLowerCase()}`"
+                        >
+                            {{ ticket.priorite }}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="ticket-content">
@@ -145,7 +206,7 @@
 
                     <p>
                         <strong>Date :</strong>
-                        {{ ticket.date_signalement }}
+                        {{ formaterDate(ticket.date_signalement) }}
                     </p>
 
                     <p>
@@ -173,6 +234,21 @@
                         }}
                     </button>
 
+                    <button
+                        v-if="ticket.statut === 'EN_COURS'"
+                        type="button"
+                        @click="ouvrirResolution(ticket)"
+                        :disabled="
+                            resolutionEnCours === ticket.id
+                        "
+                    >
+                        {{
+                            resolutionEnCours === ticket.id
+                                ? "Résolution..."
+                                : "Résoudre"
+                        }}
+                    </button>
+
                     <p
                         v-if="erreurAction"
                         class="message-error"
@@ -182,17 +258,76 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de résolution -->
+        <div
+            v-if="afficherModalResolution"
+            class="modal-overlay"
+            @click.self="fermerModalResolution"
+        >
+            <div class="modal">
+                <h2>Résoudre le ticket</h2>
+
+                <p v-if="ticketEnResolution">
+                    <strong>{{ ticketEnResolution.titre }}</strong>
+                </p>
+
+                <div class="form-group">
+                    <label for="commentaire">
+                        Commentaire de résolution
+                    </label>
+
+                    <textarea
+                        id="commentaire"
+                        v-model="commentaireResolution"
+                        rows="5"
+                        placeholder="Décrivez la résolution..."
+                        :disabled="resolutionEnCours"
+                    ></textarea>
+                </div>
+
+                <p
+                    v-if="erreurAction"
+                    class="message-error"
+                >
+                    {{ erreurAction }}
+                </p>
+
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        @click="fermerModalResolution"
+                        :disabled="resolutionEnCours"
+                    >
+                        Annuler
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="confirmerResolution"
+                        :disabled="resolutionEnCours"
+                    >
+                        {{
+                            resolutionEnCours
+                                ? "Résolution..."
+                                : "Résoudre"
+                        }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import {
     ref,
+    computed,
     onMounted,
 } from "vue";
 
 import {
-    getTickets, creerTicket, prendreEnChargeTicket
+    getTickets, creerTicket, prendreEnChargeTicket, resoudreTicket
 } from "../services/ticketService";
 
 import {
@@ -200,10 +335,14 @@ import {
 } from "../services/dashboardService";
 
 import { useAuthStore } from "../stores/auth";
+import { useNotificationStore } from "../stores/notifications";
 
 const tickets = ref([]);
 const chargement = ref(false);
 const erreur = ref("");
+
+const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 
 const afficherFormulaire = ref(false);
 
@@ -211,15 +350,21 @@ const equipements = ref([]);
 const chargementEquipements = ref(false);
 
 const equipementSelectionne = ref("");
+const titre = ref("");
+const type = ref("MAINTENANCE");
+const priorite = ref("NORMALE");
 const description = ref("");
 
 const creationEnCours = ref(false);
 const erreurCreation = ref("");
 
 const priseEnChargeEnCours = ref(null);
+const resolutionEnCours = ref(null);
 const erreurAction = ref("");
 
-const authStore = useAuthStore();
+const ticketEnResolution = ref(null);
+const commentaireResolution = ref("");
+const afficherModalResolution = ref(false);
 
 const estAdmin = computed(
     () => authStore.user?.role === "ADMIN"
@@ -249,6 +394,9 @@ function ouvrirCreation() {
     afficherFormulaire.value = true;
 
     equipementSelectionne.value = "";
+    titre.value = "";
+    type.value = "MAINTENANCE";
+    priorite.value = "NORMALE";
     description.value = "";
     erreurCreation.value = "";
 
@@ -289,6 +437,13 @@ async function enregistrerTicket() {
         return;
     }
 
+    if (!titre.value.trim()) {
+        erreurCreation.value =
+            "Veuillez saisir un titre.";
+
+        return;
+    }
+
     if (!description.value.trim()) {
         erreurCreation.value =
             "Veuillez saisir une description.";
@@ -301,9 +456,13 @@ async function enregistrerTicket() {
     try {
         await creerTicket(
             equipementSelectionne.value,
-            description.value.trim()
+            titre.value.trim(),
+            description.value.trim(),
+            type.value,
+            priorite.value
         );
 
+        notificationStore.success("Ticket créé avec succès");
         fermerFormulaire();
 
         await chargerTickets();
@@ -316,6 +475,7 @@ async function enregistrerTicket() {
         erreurCreation.value =
             error.response?.data?.detail ||
             "Impossible de créer le ticket.";
+        notificationStore.error(erreurCreation.value);
     } finally {
         creationEnCours.value = false;
     }
@@ -325,8 +485,63 @@ function fermerFormulaire() {
     afficherFormulaire.value = false;
 
     equipementSelectionne.value = "";
+    titre.value = "";
+    type.value = "MAINTENANCE";
+    priorite.value = "NORMALE";
     description.value = "";
     erreurCreation.value = "";
+}
+
+function ouvrirResolution(ticket) {
+    ticketEnResolution.value = ticket;
+    commentaireResolution.value = "";
+    afficherModalResolution.value = true;
+    erreurAction.value = "";
+}
+
+function fermerModalResolution() {
+    afficherModalResolution.value = false;
+    ticketEnResolution.value = null;
+    commentaireResolution.value = "";
+    erreurAction.value = "";
+}
+
+async function confirmerResolution() {
+    if (!commentaireResolution.value.trim()) {
+        erreurAction.value = "Veuillez saisir un commentaire de résolution.";
+        return;
+    }
+
+    resolutionEnCours.value = ticketEnResolution.value.id;
+    erreurAction.value = "";
+
+    try {
+        await resoudreTicket(
+            ticketEnResolution.value.id,
+            commentaireResolution.value.trim()
+        );
+
+        notificationStore.success("Ticket résolu avec succès");
+        fermerModalResolution();
+        await chargerTickets();
+    } catch (error) {
+        console.error(
+            "Erreur lors de la résolution :",
+            error
+        );
+
+        erreurAction.value =
+            error.response?.data?.detail ||
+            "Impossible de résoudre le ticket.";
+        notificationStore.error(erreurAction.value);
+    } finally {
+        resolutionEnCours.value = null;
+    }
+}
+
+function formaterDate(date) {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("fr-FR");
 }
 
 async function prendreEnCharge(ticket) {
@@ -335,7 +550,7 @@ async function prendreEnCharge(ticket) {
 
     try {
         await prendreEnChargeTicket(ticket.id);
-
+        notificationStore.success("Ticket pris en charge avec succès");
         await chargerTickets();
     } catch (error) {
         console.error(
@@ -346,6 +561,7 @@ async function prendreEnCharge(ticket) {
         erreurAction.value =
             error.response?.data?.detail ||
             "Impossible de prendre en charge le ticket.";
+        notificationStore.error(erreurAction.value);
     } finally {
         priseEnChargeEnCours.value = null;
     }
@@ -406,6 +622,12 @@ onMounted(() => {
     margin-bottom: 15px;
 }
 
+.ticket-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .ticket-content p {
     margin: 7px 0;
 }
@@ -415,6 +637,51 @@ onMounted(() => {
     border-radius: 15px;
     font-size: 12px;
     font-weight: bold;
+}
+
+.type {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #e9ecef;
+}
+
+.type-maintenance {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.type-reclamation {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.priorite {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.priorite-basse {
+    background: #d4edda;
+    color: #155724;
+}
+
+.priorite-normale {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.priorite-haute {
+    background: #f5c6cb;
+    color: #721c24;
+}
+
+.priorite-critique {
+    background: #d6d8d9;
+    color: #1b1e21;
 }
 
 .message {
@@ -451,6 +718,74 @@ onMounted(() => {
 }
 
 .ticket-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.modal {
+    width: 500px;
+    max-width: 90%;
+    padding: 25px;
+    background: white;
+    border-radius: 10px;
+}
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-actions button:last-child {
+    background: #2563eb;
+    color: white;
+}
+
+.modal-actions button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

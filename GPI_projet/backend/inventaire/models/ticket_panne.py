@@ -8,6 +8,16 @@ class StatutTicket(models.TextChoices):
     RESOLU = "RESOLU", "Résolu"
     ANNULE = "ANNULE", "Annulé"
 
+class TypeTicket(models.TextChoices):
+    MAINTENANCE = "MAINTENANCE", "Maintenance"
+    RECLAMATION = "RECLAMATION", "Réclamation"
+
+class PrioriteTicket(models.TextChoices):
+    BASSE = "BASSE", "Basse"
+    NORMALE = "NORMALE", "Normale"
+    HAUTE = "HAUTE", "Haute"
+    CRITIQUE = "CRITIQUE", "Critique"
+
 class TicketPanne(models.Model):
 
     equipement = models.ForeignKey(
@@ -16,11 +26,28 @@ class TicketPanne(models.Model):
         related_name="tickets_panne",
     )
 
+    titre = models.CharField(
+        max_length=200,
+        default="",
+    )
+
+    type = models.CharField(
+        max_length=20,
+        choices=TypeTicket.choices,
+        default=TypeTicket.MAINTENANCE,
+    )
+
+    priorite = models.CharField(
+        max_length=20,
+        choices=PrioriteTicket.choices,
+        default=PrioriteTicket.NORMALE,
+    )
+
     date_signalement = models.DateTimeField(
         auto_now_add=True,
     )
 
-    description =models.TextField()
+    description = models.TextField()
 
     statut = models.CharField(
         max_length=20,
@@ -38,6 +65,11 @@ class TicketPanne(models.Model):
     )
 
     def clean(self):
+        if not self.titre or not self.titre.strip():
+            raise ValidationError({
+                "titre": "Le titre du ticket est obligatoire."
+            })
+
         if self.statut == StatutTicket.RESOLU and not self.date_resolution:
                 raise ValidationError({
                     "date_resolution": (
@@ -45,17 +77,16 @@ class TicketPanne(models.Model):
                 )
             })
 
-        if not self.commentaire_resolution.strip():
+        if self.statut == StatutTicket.RESOLU and not self.commentaire_resolution.strip():
             raise ValidationError({
                 "commentaire_resolution": (
                     "Un commentaire de résolution est obligatoire."
                 )
             })
 
-        else:
-            if self.date_resolution:
-                raise ValidationError({
-                    "date_resolution": (
+        if self.statut != StatutTicket.RESOLU and self.date_resolution:
+            raise ValidationError({
+                "date_resolution": (
                     "La date de résolution ne peut être renseignée "
                     "que pour un ticket résolu."
                 )

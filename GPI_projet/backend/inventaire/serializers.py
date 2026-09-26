@@ -63,6 +63,12 @@ class EquipementSerializer(serializers.ModelSerializer):
         if situation == "AFFECTE":
             attrs["condition_stock"] = None
 
+        #RG-E03 : une chaîne vide n'est pas un numéro de série. Elle est
+        #normalisée en NULL pour que plusieurs matériels sans numéro de
+        #série puissent être enregistrés.
+        if "numero_serie" in attrs and not attrs["numero_serie"]:
+            attrs["numero_serie"] = None
+
         return attrs
 
 class PlanSerializer(serializers.ModelSerializer):
@@ -120,6 +126,9 @@ class TicketPanneSerializer(serializers.ModelSerializer):
             "equipement",
             "equipement_nom",
             "numero_inventaire",
+            "titre",
+            "type",
+            "priorite",
             "date_signalement",
             "description",
             "statut",

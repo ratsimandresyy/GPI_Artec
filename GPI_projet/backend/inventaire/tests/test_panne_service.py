@@ -18,6 +18,7 @@ class PanneServiceTest(TestCase):
     def test_declarer_panne(self):
         ticket = PanneService.declarer_panne(
             equipement=self.equipement,
+            titre="Panne écran",
             description="L'écran ne s'allume plus.",
         )
 
@@ -47,10 +48,28 @@ class PanneServiceTest(TestCase):
             self.equipement,
         )
 
+        #Vérifie le titre
+        self.assertEqual(
+            ticket.titre,
+            "Panne écran",
+        )
+
         #Vérifie la description
         self.assertEqual(
             ticket.description,
             "L'écran ne s'allume plus.",
+        )
+
+        #Vérifie le type par défaut
+        self.assertEqual(
+            ticket.type,
+            "MAINTENANCE",
+        )
+
+        #Vérifie la priorité par défaut
+        self.assertEqual(
+            ticket.priorite,
+            "NORMALE",
         )
 
         #Un nouveau ticket doit être ouvert.
@@ -67,6 +86,7 @@ class PanneServiceTest(TestCase):
     def test_prendre_en_charge(self):
         ticket = PanneService.declarer_panne(
             equipement=self.equipement,
+            titre="Panne écran",
             description="L'écran ne s'allume plus."
         )
 
@@ -82,6 +102,7 @@ class PanneServiceTest(TestCase):
     def test_resoudre_ticket(self):
         ticket = PanneService.declarer_panne(
             equipement=self.equipement,
+            titre="Panne écran",
             description="L'écran ne s'affiche plus."
         )
 
@@ -119,3 +140,176 @@ class PanneServiceTest(TestCase):
             self.equipement.situation,
             "AFFECTE",
         )
+
+    def test_declarer_panne_avec_type_et_priorite(self):
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Réclamation utilisateur",
+            description="L'utilisateur se plaint de la lenteur.",
+            type="RECLAMATION",
+            priorite="HAUTE",
+        )
+
+        self.assertEqual(
+            ticket.type,
+            "RECLAMATION",
+        )
+
+        self.assertEqual(
+            ticket.priorite,
+            "HAUTE",
+        )
+
+    def test_titre_obligatoire(self):
+        with self.assertRaises(ValueError) as context:
+            PanneService.declarer_panne(
+                equipement=self.equipement,
+                titre="",
+                description="Description test",
+            )
+
+        self.assertIn(
+            "titre",
+            str(context.exception).lower(),
+        )
+
+    def test_qualifier_ticket(self):
+        """
+        Diagramme d'activité : "Qualifier le ticket : définir le type,
+        définir la priorité".
+        """
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        PanneService.qualifier_ticket(
+            ticket,
+            type="RECLAMATION",
+            priorite="CRITIQUE",
+        )
+
+        ticket.refresh_from_db()
+
+        self.assertEqual(ticket.type, "RECLAMATION")
+        self.assertEqual(ticket.priorite, "CRITIQUE")
+
+    def test_qualifier_ticket_avec_un_seul_champ(self):
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        PanneService.qualifier_ticket(ticket, priorite="HAUTE")
+
+        ticket.refresh_from_db()
+
+        self.assertEqual(ticket.type, "MAINTENANCE")
+        self.assertEqual(ticket.priorite, "HAUTE")
+
+    def test_qualifier_ticket_sans_donnee_est_refuse(self):
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        with self.assertRaises(ValueError):
+            PanneService.qualifier_ticket(ticket)
+
+    def test_qualifier_ticket_avec_valeurs_invalides(self):
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        with self.assertRaises(ValueError):
+            PanneService.qualifier_ticket(ticket, type="INCONNU")
+
+        with self.assertRaises(ValueError):
+            PanneService.qualifier_ticket(ticket, priorite="URGENT")
+
+    def test_qualifier_ticket_ne_change_pas_le_statut(self):
+        """
+        La qualification ne remplace pas le workflow : le statut reste
+        piloté par prendre_en_charge / resoudre_ticket.
+        """
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        PanneService.qualifier_ticket(ticket, priorite="HAUTE")
+
+        ticket.refresh_from_db()
+
+        self.assertEqual(ticket.statut, "OUVERT")
+
+    def test_resoudre_ticket_en_hors_service(self):
+        """
+        Diagramme d'activité : "Matériel réparé ?" Non -> HORS_SERVICE.
+        """
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne carte mère",
+            description="Le matériel ne démarre plus.",
+        )
+
+        PanneService.prendre_en_charge(ticket)
+
+        PanneService.resoudre_ticket(
+            ticket,
+            "Carte mère défectueuse, matériel non réparable.",
+            etat_final="HORS_SERVICE",
+        )
+
+        ticket.refresh_from_db()
+        self.equipement.refresh_from_db()
+
+        self.assertEqual(ticket.statut, "RESOLU")
+        self.assertIsNotNone(ticket.date_resolution)
+        self.assertEqual(self.equipement.etat, "HORS_SERVICE")
+
+    def test_resoudre_ticket_avec_etat_final_invalide(self):
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        PanneService.prendre_en_charge(ticket)
+
+        with self.assertRaises(ValueError):
+            PanneService.resoudre_ticket(
+                ticket,
+                "Etat final impossible.",
+                etat_final="EN_PANNE",
+            )
+
+        ticket.refresh_from_db()
+
+        self.assertEqual(ticket.statut, "EN_COURS")
+
+    def test_resoudre_ticket_sans_etat_final_remet_en_service(self):
+        """
+        Comportement par défaut conservé : sans état final fourni, le
+        matériel est remis en service.
+        """
+        ticket = PanneService.declarer_panne(
+            equipement=self.equipement,
+            titre="Panne écran",
+            description="L'écran ne s'allume plus.",
+        )
+
+        PanneService.prendre_en_charge(ticket)
+        PanneService.resoudre_ticket(ticket, "Ecran remplacé.")
+
+        ticket.refresh_from_db()
+        self.equipement.refresh_from_db()
+
+        self.assertEqual(ticket.statut, "RESOLU")
+        self.assertEqual(self.equipement.etat, "EN_SERVICE")

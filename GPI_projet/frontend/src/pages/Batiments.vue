@@ -188,6 +188,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { useNotificationStore } from "../stores/notifications";
 
 import {
     getBatiments,
@@ -199,6 +200,7 @@ import {
 
 const router = useRouter();
 const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 
 
 const batiments = ref([]);
@@ -333,6 +335,7 @@ async function enregistrer() {
         if (modeFormulaire.value === "creation") {
 
             await creerBatiment(formulaire.value);
+            notificationStore.success("Bâtiment créé avec succès");
 
         } else {
 
@@ -340,6 +343,7 @@ async function enregistrer() {
                 batimentSelectionne.value.id,
                 formulaire.value
             );
+            notificationStore.success("Bâtiment modifié avec succès");
         }
 
         fermerFormulaire();
@@ -355,6 +359,7 @@ async function enregistrer() {
 
         errorMessage.value =
             "Impossible d'enregistrer le bâtiment.";
+        notificationStore.error(errorMessage.value);
 
     } finally {
 
@@ -381,7 +386,7 @@ async function supprimer(batiment) {
     try {
 
         await supprimerBatiment(batiment.id);
-
+        notificationStore.success("Bâtiment supprimé avec succès");
         await chargerBatiments();
 
     } catch (error) {
@@ -393,6 +398,7 @@ async function supprimer(batiment) {
 
         errorMessage.value =
             "Impossible de supprimer le bâtiment.";
+        notificationStore.error(errorMessage.value);
     }
 }
 

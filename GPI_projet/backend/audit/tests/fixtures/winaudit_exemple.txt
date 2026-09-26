@@ -1,0 +1,22 @@
+Audit de l'Ordinateur :: 19/03/2021 07:32:05
+
+Résumé du Système
+-------------------
+| Item | Value |
+| Computer Name | AD1 |
+| Asset Tag | INV-2021-001 |
+| Serial Number | SERIE-0001 |
+| Manufacturer | Dell Inc. |
+| Model | OptiPlex 3070 |
+| Operating System | Windows 10 Professionnel |
+| Processor Description | Intel(R) Core(TM) i5-9400 CPU @ 2.90GHz |
+| Total Memory | 8,00 Go |
+| Total Hard Drive | 256,00 Go |
+| BIOS Version | 1.2.3 |
+| Windows Product ID | 00330-80000-00000-AA123 |
+
+Périphériques
+-------------------
+| Name | Description |
+| Clavier | Clavier standard PS/2 |
+| Souris | Souris compatible HID |
