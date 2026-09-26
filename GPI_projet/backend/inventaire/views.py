@@ -26,6 +26,9 @@ from .serializers import (
 )
 
 from .services.panne_service import PanneService
+from .services.stock_service import StockService
+from .services.localisation_service import LocalisationService
+
 # Create your views here.
 
 class BatimentViewSet(viewsets.ModelViewSet):
@@ -61,7 +64,7 @@ class EquipementViewSet(viewsets.ModelViewSet):
                 {
                     "detail": "Le paramètre 'q' est obligatoire." 
                 },
-                status = 400
+                status = status.HTTP_400_BAD_REQUEST
             )
 
         equipements = self.get_queryset().filter(
@@ -76,18 +79,345 @@ class EquipementViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="transferer-vers-stock",
+    )
+    def transferer_vers_stock(self, request, pk=None):
+        equipement = self.get_object()
+
+        condition_stock = request.data.get("condition_stock")
+
+        if not condition_stock:
+            return Response(
+                {
+                    "detail": (
+                        "La condition du matériel est obligatoire."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            equipement = StockService.transferer_vers_stock(
+                equipement=equipement,
+                condition_stock=condition_stock,
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(equipement)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="terminer-maintenance",
+    )
+    def terminer_maintenance(self, request, pk=None):
+        equipement = self.get_object()
+
+        try:
+            equipement = StockService.terminer_maintenance(
+                equipement=equipement,
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(equipement)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="affecter",
+    )
+    def affecter(self, request, pk=None):
+        equipement = self.get_object()
+
+        salle_id = request.data.get("salle")
+        plan_id = request.data.get("plan")
+        x = request.data.get("x")
+        y = request.data.get("y")
+
+        if not all([
+            salle_id,
+            plan_id,
+            x is not None,
+            y is not None,
+        ]):
+            return Response(
+                {
+                    "detail": (
+                        "La salle, le plan, les coordonnées X "
+                        "et Y sont obligatoires."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            salle = Salle.objects.get(pk=salle_id)
+        except Salle.DoesNotExist:
+            return Response(
+                {
+                    "detail": "La salle demandée n'existe pas."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            plan = Plan.objects.get(pk=plan_id)
+        except Plan.DoesNotExist:
+            return Response(
+                {
+                    "detail": "Le plan demandé n'existe pas."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            equipement = StockService.affecter_equipement(
+                equipement=equipement,
+                salle=salle,
+                plan=plan,
+                x=x,
+                y=y,
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(equipement)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
 class PositionViewSet(viewsets.ModelViewSet):
+    """
+    API de gestion des positions des équipements.
+
+    Les règles métier de localisation et de déplacement
+    sont centralisées dans LocalisationService.
+    """
+
     queryset = Position.objects.select_related(
         "equipement",
         "plan",
-    )
+        "equipement__salle",
+        )
+
     serializer_class = PositionDetailSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="localiser",
+    )
+    def localiser(self, request):
+        """
+        Localise un équipement sur un plan.
+
+        Exemple de requête :
+
+        {
+            "equipement": 1,
+            "plan": 2,
+            "x": 200,
+            "y": 300
+        }
+        """
+
+        equipement_id = request.data.get("equipement")
+        plan_id = request.data.get("plan")
+        x = request.data.get("x")
+        y = request.data.get("y")
+
+        # Vérification des données obligatoires.
+        if None in (equipement_id, plan_id, x, y):
+            return Response(
+                {
+                    "detail": (
+                        "L'équipement, le plan, les coordonnées X "
+                        "et Y sont obligatoires."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Recherche de l'équipement.
+        try:
+            equipement = Equipement.objects.get(
+                pk=equipement_id
+            )
+        except Equipement.DoesNotExist:
+            return Response(
+                {
+                    "detail": "L'équipement demandé n'existe pas."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Recherche du plan.
+        try:
+            plan = Plan.objects.get(
+                pk=plan_id
+            )
+        except Plan.DoesNotExist:
+            return Response(
+                {
+                    "detail": "Le plan demandé n'existe pas."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Un équipement doit être affecté à une salle.
+        if equipement.salle is None:
+            return Response(
+                {
+                    "detail": (
+                        "L'équipement doit être affecté "
+                        "à une salle avant sa localisation."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            position = LocalisationService.localiser_equipement(
+                equipement=equipement,
+                salle=equipement.salle,
+                plan=plan,
+                x=float(x),
+                y=float(y),
+            )
+
+        except ValueError as error:
+            return Response(
+                {
+                    "detail": str(error)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(position)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="deplacer",
+    )
+    def deplacer(self, request, pk=None):
+        """
+        Déplace un équipement déjà localisé.
+
+        Exemple :
+
+        POST /api/inventaire/positions/1/deplacer/
+
+        {
+            "plan": 2,
+            "x": 500,
+            "y": 600
+        }
+        """
+
+        position = self.get_object()
+
+        plan_id = request.data.get("plan")
+        x = request.data.get("x")
+        y = request.data.get("y")
+
+        if None in (plan_id, x, y):
+            return Response(
+                {
+                    "detail": (
+                        "Le plan, les coordonnées X et Y "
+                        "sont obligatoires."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            plan = Plan.objects.get(
+                pk=plan_id
+            )
+        except Plan.DoesNotExist:
+            return Response(
+                {
+                    "detail": "Le plan demandé n'existe pas."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            position = LocalisationService.deplacer_equipement(
+                equipement=position.equipement,
+                plan=plan,
+                x=float(x),
+                y=float(y),
+            )
+
+        except ValueError as error:
+            return Response(
+                {
+                    "detail": str(error)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(position)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Retire la localisation graphique d'un équipement.
+        """
+
+        position = self.get_object()
+
+        LocalisationService.retirer_localisation(
+            position.equipement
+        )
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 class TicketPanneViewSet(viewsets.ModelViewSet):
     queryset = TicketPanne.objects.select_related("equipement").all()

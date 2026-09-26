@@ -19,13 +19,14 @@ class StockService:
             )
 
         equipement.situation = "EN_STOCK"
+        equipement.condition_stock = condition_stock
         equipement.etat = "EN_MAINTENANCE"
 
         # L'équipement n'est plus affecté à une salle.
         equipement.salle = None
 
         equipement.save(
-            update_fields=["situation", "etat", "salle"]
+            update_fields=["situation", "condition_stock", "etat", "salle"]
         )
 
         # L'équipement ne doit plus avoir de position sur le plan s'il n'est plus dans une salle

@@ -47,7 +47,8 @@ class StockServiceTest(TestCase):
 
     def test_transferer_vers_stock(self):
         StockService.transferer_vers_stock(
-            self.equipement
+            self.equipement,
+            condition_stock="OCCASION",
         )
 
         self.equipement.refresh_from_db()
@@ -82,7 +83,8 @@ class StockServiceTest(TestCase):
          )
 
         StockService.transferer_vers_stock(
-            self.equipement
+            self.equipement,
+            condition_stock="OCCASION",
         )
 
         self.assertFalse(

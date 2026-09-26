@@ -124,6 +124,7 @@
                 :plan="plan"
                 :positions="positions"
                 :est-admin="estAdmin"
+                @position-modifiee="positionModifiee"
             />
 
         </div>
@@ -345,6 +346,16 @@ async function chargerPlan() {
 
     }
 
+}
+
+function positionModifiee(position) {
+    const index = positions.value.findIndex(
+        (item) => item.id === position.id
+    );
+
+    if (index !== -1) {
+        positions.value[index] = position;
+    }
 }
 
 

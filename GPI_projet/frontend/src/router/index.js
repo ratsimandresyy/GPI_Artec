@@ -12,6 +12,7 @@ import EquipementsSalle from "../pages/EquipementsSalle.vue";
 import Localisation from "../pages/Localisation.vue";
 import Audits from "../pages/Audits.vue";
 import Utilisateurs from "../pages/Utilisateurs.vue";
+import Tickets from "../pages/Tickets.vue";
 
 const routes = [
     { path: "/", redirect: "/dashboard",},
@@ -27,7 +28,8 @@ const routes = [
             { path: "salles/:salleId/equipements", name: "EquipementsSalle", component: EquipementsSalle},
             { path: "localisation", name: "Localisation", component: Localisation},
             { path: "audits", name: "Audits", component: Audits},
-            { path: "utilisateurs", name: "Utilisateurs", component: Utilisateurs, meta: {requiresAdmin: true}}
+            { path: "utilisateurs", name: "Utilisateurs", component: Utilisateurs, meta: {requiresAdmin: true}},
+            {path: "/tickets", name: "Tickets", component: Tickets}
         ]
     }
 ];

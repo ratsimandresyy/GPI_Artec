@@ -52,7 +52,7 @@ class EquipementSerializer(serializers.ModelSerializer):
                 )
             })
 
-        if salle:
+        if situation == "EN_STOCK" and salle:
             raise serializers.ValidationError({
                 "salle": (
                     "Un matériel en stock ne peut pas être affecté "
