@@ -249,6 +249,21 @@
                         }}
                     </button>
 
+                    <button
+                        v-if="ticket.statut !== 'RESOLU'"
+                        type="button"
+                        @click="ouvrirQualification(ticket)"
+                        :disabled="
+                            qualificationEnCours === ticket.id
+                        "
+                    >
+                        {{
+                            qualificationEnCours === ticket.id
+                                ? "Qualification..."
+                                : "Qualifier"
+                        }}
+                    </button>
+
                     <p
                         v-if="erreurAction"
                         class="message-error"
@@ -286,6 +301,34 @@
                     ></textarea>
                 </div>
 
+                <!-- Diagramme d'activite : « Materiel repare ? »
+                     Oui -> remise en service, Non -> reste hors service. -->
+                <div class="form-group">
+                    <span class="legend">
+                        Matériel réparé ?
+                    </span>
+
+                    <label class="choice">
+                        <input
+                            v-model="materielRepare"
+                            type="radio"
+                            :value="true"
+                            :disabled="resolutionEnCours"
+                        >
+                        Oui, remettre le matériel en service
+                    </label>
+
+                    <label class="choice">
+                        <input
+                            v-model="materielRepare"
+                            type="radio"
+                            :value="false"
+                            :disabled="resolutionEnCours"
+                        >
+                        Non, maintenir le matériel hors service
+                    </label>
+                </div>
+
                 <p
                     v-if="erreurAction"
                     class="message-error"
@@ -316,6 +359,83 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de qualification : diagramme d'activite
+             « Qualifier le ticket : definir le type, definir la priorite ». -->
+        <div
+            v-if="afficherModalQualification"
+            class="modal-overlay"
+            @click.self="fermerModalQualification"
+        >
+            <div class="modal">
+                <h2>Qualifier le ticket</h2>
+
+                <p v-if="ticketEnQualification">
+                    <strong>{{ ticketEnQualification.titre }}</strong>
+                </p>
+
+                <div class="form-group">
+                    <label for="qualification-type">
+                        Type
+                    </label>
+
+                    <select
+                        id="qualification-type"
+                        v-model="typeQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        <option value="MAINTENANCE">Maintenance</option>
+                        <option value="RECLAMATION">Réclamation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="qualification-priorite">
+                        Priorité
+                    </label>
+
+                    <select
+                        id="qualification-priorite"
+                        v-model="prioriteQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        <option value="BASSE">Basse</option>
+                        <option value="NORMALE">Normale</option>
+                        <option value="HAUTE">Haute</option>
+                        <option value="CRITIQUE">Critique</option>
+                    </select>
+                </div>
+
+                <p
+                    v-if="erreurAction"
+                    class="message-error"
+                >
+                    {{ erreurAction }}
+                </p>
+
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        @click="fermerModalQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        Annuler
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="confirmerQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        {{
+                            qualificationEnCours
+                                ? "Qualification..."
+                                : "Qualifier"
+                        }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -327,7 +447,11 @@ import {
 } from "vue";
 
 import {
-    getTickets, creerTicket, prendreEnChargeTicket, resoudreTicket
+    getTickets,
+    creerTicket,
+    prendreEnChargeTicket,
+    resoudreTicket,
+    qualifierTicket,
 } from "../services/ticketService";
 
 import {
@@ -365,6 +489,16 @@ const erreurAction = ref("");
 const ticketEnResolution = ref(null);
 const commentaireResolution = ref("");
 const afficherModalResolution = ref(false);
+
+// « Materiel repare ? » du diagramme d'activite : par oui, le matériel
+// est remis en service a la cloture.
+const materielRepare = ref(true);
+
+const ticketEnQualification = ref(null);
+const typeQualification = ref("MAINTENANCE");
+const prioriteQualification = ref("NORMALE");
+const afficherModalQualification = ref(false);
+const qualificationEnCours = ref(null);
 
 const estAdmin = computed(
     () => authStore.user?.role === "ADMIN"
@@ -495,6 +629,7 @@ function fermerFormulaire() {
 function ouvrirResolution(ticket) {
     ticketEnResolution.value = ticket;
     commentaireResolution.value = "";
+    materielRepare.value = true;
     afficherModalResolution.value = true;
     erreurAction.value = "";
 }
@@ -503,7 +638,50 @@ function fermerModalResolution() {
     afficherModalResolution.value = false;
     ticketEnResolution.value = null;
     commentaireResolution.value = "";
+    materielRepare.value = true;
     erreurAction.value = "";
+}
+
+function ouvrirQualification(ticket) {
+    ticketEnQualification.value = ticket;
+    typeQualification.value = ticket.type;
+    prioriteQualification.value = ticket.priorite;
+    afficherModalQualification.value = true;
+    erreurAction.value = "";
+}
+
+function fermerModalQualification() {
+    afficherModalQualification.value = false;
+    ticketEnQualification.value = null;
+    erreurAction.value = "";
+}
+
+async function confirmerQualification() {
+    qualificationEnCours.value = ticketEnQualification.value.id;
+    erreurAction.value = "";
+
+    try {
+        await qualifierTicket(ticketEnQualification.value.id, {
+            type: typeQualification.value,
+            priorite: prioriteQualification.value,
+        });
+
+        notificationStore.success("Ticket qualifié avec succès");
+        fermerModalQualification();
+        await chargerTickets();
+    } catch (error) {
+        console.error(
+            "Erreur lors de la qualification :",
+            error
+        );
+
+        erreurAction.value =
+            error.response?.data?.detail ||
+            "Impossible de qualifier le ticket.";
+        notificationStore.error(erreurAction.value);
+    } finally {
+        qualificationEnCours.value = null;
+    }
 }
 
 async function confirmerResolution() {
@@ -518,7 +696,8 @@ async function confirmerResolution() {
     try {
         await resoudreTicket(
             ticketEnResolution.value.id,
-            commentaireResolution.value.trim()
+            commentaireResolution.value.trim(),
+            materielRepare.value ? "EN_SERVICE" : "HORS_SERVICE"
         );
 
         notificationStore.success("Ticket résolu avec succès");
@@ -748,6 +927,23 @@ onMounted(() => {
 
 .form-group {
     margin-bottom: 15px;
+}
+
+.legend {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.choice {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.choice input {
+    margin-right: 8px;
 }
 
 .form-group label {

@@ -1,457 +1,285 @@
+@startuml GPI_UseCase
 
-@startuml GPI_Classe
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
 
-skinparam classAttributeIconSize 0
-skinparam linetype ortho
+actor "Visiteur" as Visitor
+actor "Administrateur" as Admin
+rectangle "Contrôleur de domaine" as DomainServer <<system>>
+rectangle "Service de surveillance" as Watcher <<system>>
 
-' =========================================================
-' UTILISATEUR
-' =========================================================
+Visitor <|-- Admin
 
-class Utilisateur {
-    +id : int
-    +username : String
-    +first_name : String
-    +last_name : String
-    +email : String
-    +role : RoleUtilisateur
+rectangle "Système Web GPI" {
+
+    package "Accès et authentification" {
+
+        usecase "Accéder au système GPI" as AccessGPI
+        usecase "Vérifier l'appartenance\nau domaine" as VerifyDomain
+        usecase "S'authentifier comme\nadministrateur" as AdminLogin
+        usecase "Contrôler les droits\nd'administrateur" as Authorize
+    }
+
+    package "Gestion des matériels informatiques" {
+
+        usecase "Consulter un matériel" as View
+    usecase "Rechercher un matériel" as Search
+
+    usecase "Gérer les matériels" as ManageAssets
+    usecase "Ajouter un matériel" as Add
+    usecase "Modifier un matériel" as Update
+    usecase "Supprimer un matériel" as Delete
+
+    usecase "Gérer l'état\nd'un matériel" as ManageStatus
+    usecase "Gérer la situation\nd'un matériel" as ManageSituation
+    usecase "Gérer les matériels\nen stock" as ManageStock
+    }
+
+    package "Cartographie" {
+
+        usecase "Consulter les bâtiments,\nétages et plans" as Map
+        usecase "Localiser un actif\nsur le plan" as Locate
+        usecase "Positionner / déplacer\nun actif sur le plan" as Position
+    }
+
+    package "Gestion des tickets" {
+
+        usecase "Ouvrir un ticket" as CreateTicket
+        usecase "Consulter les tickets" as ViewTickets
+        usecase "Gérer les tickets" as ManageTickets
+
+        usecase "Qualifier le ticket" as QualifyTicket
+        usecase "Suivre le traitement\ndu ticket" as ProcessTicket
+        usecase "Clôturer le ticket" as CloseTicket
+    }
+
+    package "Synchronisation" {
+
+        usecase "Importer et parser\nles rapports WinAudit" as Import
+        usecase "Synchroniser\nl'inventaire" as SyncDB
+    }
 }
 
-enum RoleUtilisateur {
-    ADMIN
-    USER
-}
+' ==========================================
+' ACCÈS AU SYSTÈME
+' ==========================================
 
-note right of Utilisateur
-RG-U01 :
-Un utilisateur possède un rôle
-dans le système GPI.
+Visitor --> AccessGPI
 
-RG-U02 :
-Le rôle ADMIN permet
-l'administration du système.
+AccessGPI ..> VerifyDomain : <<include>>
 
-RG-U03 :
-Le rôle USER correspond
-à un utilisateur standard.
+DomainServer --> VerifyDomain
+
+' ==========================================
+' AUTHENTIFICATION ADMINISTRATEUR
+' ==========================================
+
+Admin --> AdminLogin
+
+AdminLogin ..> Authorize : <<include>>
+
+' ==========================================
+' ACCÈS VISITEUR
+' ==========================================
+
+Visitor --> View
+Visitor --> Search
+Visitor --> Map
+Visitor --> Locate
+Visitor --> CreateTicket
+
+' ==========================================
+' ACCÈS ADMINISTRATEUR
+' ==========================================
+
+Admin --> ManageAssets
+Admin --> ManageStatus
+Admin --> ManageSituation
+Admin --> ManageStock
+Admin --> Position
+
+' ==========================================
+' SYNCHRONISATION AUTOMATIQUE
+' ==========================================
+
+Watcher --> Import
+
+' ==========================================
+' RELATIONS D'INCLUSION
+' ==========================================
+
+ManageAssets ..> Add : <<include>>
+ManageAssets ..> Update : <<include>>
+ManageAssets ..> Delete : <<include>>
+
+ManageTickets ..> QualifyTicket : <<include>>
+ManageTickets ..> ProcessTicket : <<include>>
+ManageTickets ..> CloseTicket : <<include>>
+
+Import ..> SyncDB : <<include>>
+
+' ==========================================
+' RÈGLES D'ACCÈS
+' ==========================================
+
+note right of AccessGPI
+L'accès au système GPI est
+autorisé aux personnes
+enregistrées dans le domaine.
+
+Une fois l'accès autorisé,
+l'utilisateur peut utiliser
+le système en tant que visiteur.
 end note
 
+note right of AdminLogin
+Le login du site GPI permet
+d'identifier les utilisateurs
+disposant de droits administrateur.
 
-' =========================================================
-' BATIMENT / LOCALISATION
-' =========================================================
+Si l'authentification réussit :
+accès aux fonctionnalités
+d'administration.
 
-class Batiment {
-    +id : int
-    +nom : String
-    +description : Text
-}
-
-class Etage {
-    +id : int
-    +numero : int
-    +nom : String
-}
-
-class Salle {
-    +id : int
-    +nom : String
-    +description : Text
-}
-
-Batiment "1" -- "0..*" Etage : contient >
-Etage "1" -- "0..*" Salle : contient >
-
-note right of Batiment
-RG-L01 :
-Le nom du bâtiment est unique.
-
-RG-L02 :
-Un étage appartient
-à un seul bâtiment.
+Si aucune authentification
+administrateur n'est effectuée :
+l'utilisateur reste visiteur.
 end note
 
-note right of Etage
-RG-L03 :
-Un étage appartient
-à un seul bâtiment.
+note right of Authorize
+Les droits administrateur sont
+déterminés par le compte
+enregistré dans le système GPI.
 
-RG-L04 :
-Un étage peut contenir
-plusieurs salles.
+L'authentification au domaine
+ne donne pas automatiquement
+les droits administrateur.
 end note
 
-note right of Salle
-RG-L05 :
-Une salle appartient
-à un seul étage.
+' ==========================================
+' ÉTAT DES MATÉRIELS
+' ==========================================
 
-RG-L06 :
-Une salle peut contenir
-plusieurs équipements.
+note right of ManageStatus
+L'administrateur peut modifier
+l'état d'un matériel.
+
+Exemples :
+- En service
+- En panne
+- En maintenance
+- Hors service
+
+Le visiteur peut uniquement
+consulter l'état.
 end note
 
+' ==========================================
+' STOCK
+' ==========================================
 
-' =========================================================
-' EQUIPEMENT
-' =========================================================
+note right of ManageStock
+Les matériels non affectés
+à une localisation peuvent
+être placés en stock.
 
-class Equipement {
-    +id : int
-    +nom : String
-    +type : TypeEquipement
-    +numero_inventaire : String
-    +numero_serie : String
-    +fabricant : String
-    +modele : String
-    +adresse_ip : String
-    +adresse_mac : String
-    +etat : EtatEquipement
-    +situation : SituationEquipement
-    +condition_stock : ConditionStock
-}
+Un matériel en stock peut être :
+- Neuf
+- Usagé
+- En panne
 
-enum TypeEquipement {
-    ORDINATEUR
-}
-
-enum EtatEquipement {
-    EN_SERVICE
-    EN_PANNE
-    EN_MAINTENANCE
-    HORS_SERVICE
-}
-
-enum SituationEquipement {
-    AFFECTE
-    EN_STOCK
-}
-
-enum ConditionStock {
-    NEUF
-    OCCASION
-    RECONDITIONNE
-}
-
-Salle "0..1" -- "0..*" Equipement : accueille >
-
-note right of Equipement
-RG-E01 :
-Le nom de l'équipement
-est unique.
-
-RG-E02 :
-Le numéro d'inventaire
-est unique.
-
-RG-E03 :
-Le numéro de série est unique
-lorsqu'il est renseigné.
-
-RG-E04 :
-Chaque équipement possède
-un type, un état et une
-situation.
-
-RG-E05 :
-Un équipement affecté peut
-être associé à une salle.
-
-RG-E06 :
-Un équipement en stock ne peut
-pas être associé à une salle.
-
-RG-E07 :
-Un équipement en stock doit
-posséder une condition de stock.
-
-RG-E08 :
-Un équipement affecté ne possède
-pas de condition de stock.
+Le stock représente une situation
+du matériel et non une entité
+indépendante.
 end note
 
-
-' =========================================================
-' PLAN / CARTOGRAPHIE
-' =========================================================
-
-class Plan {
-    +id : int
-    +image : Image
-    +largeur : int
-    +hauteur : int
-}
-
-class Position {
-    +id : int
-    +x : float
-    +y : float
-}
-
-Etage "1" -- "0..1" Plan : possède >
-Plan "1" -- "0..*" Position : contient >
-Equipement "1" -- "0..1" Position : possède >
-
-note right of Plan
-RG-P01 :
-Un étage possède au maximum
-un plan.
-
-RG-P02 :
-Un plan est associé
-à un seul étage.
-
-RG-P03 :
-La largeur et la hauteur
-peuvent être renseignées
-pour définir les dimensions
-du plan.
-end note
+' ==========================================
+' LOCALISATION
+' ==========================================
 
 note right of Position
-RG-P04 :
-Une position appartient
-à un seul plan.
+L'administrateur peut :
 
-RG-P05 :
-Un équipement possède
-au maximum une position.
+- positionner un matériel
+  sur le plan ;
+- déplacer un matériel ;
+- déplacer un matériel du stock
+  vers une localisation ;
+- retirer un matériel du plan
+  vers le stock.
 
-RG-P06 :
-Un équipement en stock
-ne doit pas posséder
-de position.
-
-RG-P07 :
-Les coordonnées X et Y
-doivent rester dans les
-limites du plan lorsque
-ses dimensions sont connues.
-
-RG-P08 :
-La salle de l'équipement
-et le plan utilisé pour sa
-localisation doivent appartenir
-au même étage.
+Un matériel en stock ne possède
+pas de position sur le plan.
 end note
 
+' ==========================================
+' TICKETS
+' ==========================================
 
-' =========================================================
-' AUDIT WINAUDIT
-' =========================================================
+note right of CreateTicket
+Le visiteur peut ouvrir un ticket
+de maintenance ou de réclamation.
 
-class RapportAudit {
-    +id : int
-    +date_audit : DateTime
-    +system_exploitation : String
-    +processeur : String
-    +memoire : String
-    +stockage : String
-    +bios : Text
-    +donnees_brutes : JSON
-}
-
-Equipement "1" -- "0..*" RapportAudit : possède >
-
-note right of RapportAudit
-RG-W01 :
-Un rapport correspond
-à une collecte WinAudit.
-
-RG-W02 :
-Un équipement peut posséder
-plusieurs rapports d'audit.
-
-RG-W03 :
-Chaque rapport possède
-une date d'audit.
-
-RG-W04 :
-Les données brutes de
-l'audit sont conservées.
-
-RG-W05 :
-Les anciens rapports sont
-conservés pour permettre
-l'historique des collectes.
+Le ticket doit être associé
+à un matériel existant.
 end note
 
+note right of QualifyTicket
+L'administrateur peut qualifier
+le ticket.
 
-' =========================================================
-' CONNEXIONS D'AUDIT
-' =========================================================
+Types :
+- Maintenance
+- Réclamation
 
-class ConnexionAudit {
-    +id : int
-    +nom_utilisateur : String
-    +date_connexion : Date
-}
-
-Equipement "1" -- "0..*" ConnexionAudit : possède >
-Utilisateur "0..1" -- "0..*" ConnexionAudit : correspond à >
-
-note right of ConnexionAudit
-RG-C01 :
-Une connexion d'audit
-est associée à un équipement.
-
-RG-C02 :
-Une connexion peut être
-associée à un utilisateur GPI.
-
-RG-C03 :
-Le nom d'utilisateur est
-conservé dans la connexion.
-
-RG-C04 :
-La date de connexion
-est enregistrée automatiquement.
+Il peut également définir
+la priorité et le statut.
 end note
 
+note right of ProcessTicket
+L'administrateur assure
+le suivi du traitement.
 
-' =========================================================
-' TICKETS / PANNES
-' =========================================================
-
-class TicketPanne {
-    +id : int
-    +date_signalement : DateTime
-    +description : Text
-    +statut : StatutTicket
-    +date_resolution : DateTime
-    +commentaire_resolution : Text
-}
-
-enum StatutTicket {
-    OUVERT
-    EN_COURS
-    RESOLU
-    ANNULE
-}
-
-Equipement "1" -- "0..*" TicketPanne : concerne >
-
-note right of TicketPanne
-RG-T01 :
-Un ticket concerne
-un équipement.
-
-RG-T02 :
-Le ticket permet de signaler
-une panne ou une réclamation
-liée à un équipement.
-
-RG-T03 :
-Un ticket possède un statut.
-
-RG-T04 :
-Un nouveau ticket possède
-le statut OUVERT.
-
-RG-T05 :
-Un ticket résolu possède
-une date de résolution.
-
-RG-T06 :
-La résolution peut être
-accompagnée d'un commentaire.
-
-RG-T07 :
-Le suivi du ticket permet
-de distinguer son ouverture,
-sa prise en charge et
-sa résolution.
+La durée de traitement est
+calculée entre la date
+d'ouverture et la date
+de clôture.
 end note
 
+note right of CloseTicket
+Le ticket est clôturé lorsque
+la demande ou le problème
+a été traité.
 
-' =========================================================
-' CONTROLEUR DE DOMAINE
-' =========================================================
-
-class ControleurDomaine <<external>> {
-    +verifierAppartenanceDomaine()
-    +authentifier()
-}
-
-ControleurDomaine ..> Utilisateur : contrôle l'accès >
-
-note right of ControleurDomaine
-RG-CD01 :
-Le contrôleur de domaine
-appartient à l'infrastructure
-externe de l'organisation.
-
-RG-CD02 :
-Il vérifie l'appartenance
-d'une machine ou d'un utilisateur
-au domaine.
-
-RG-CD03 :
-Le contrôleur de domaine
-n'est pas géré par GPI.
-
-RG-CD04 :
-Les règles d'appartenance
-au domaine sont donc externes
-au système GPI.
+La date de clôture est enregistrée
+afin de conserver l'historique.
 end note
 
+' ==========================================
+' WINAUDIT
+' ==========================================
 
-' =========================================================
-' REGLES GENERALES
-' =========================================================
+note right of Import
+Le service de surveillance
+détecte automatiquement
+les nouveaux fichiers WinAudit.
 
-note as RG
-REGLES GENERALES DE GESTION
+Les rapports valides sont
+analysés puis importés.
+end note
 
-RG01 :
-L'accès à GPI dépend du contrôle
-d'appartenance au domaine réalisé
-par l'infrastructure externe.
+note right of SyncDB
+Si le matériel existe :
+mise à jour de ses informations.
 
-RG02 :
-Le rôle de l'utilisateur dans GPI
-détermine ses droits applicatifs.
+Sinon :
+création d'un nouvel actif.
 
-RG03 :
-Un équipement possède un numéro
-d'inventaire unique.
-
-RG04 :
-Un équipement ne peut pas être
-simultanément EN_STOCK et affecté.
-
-RG05 :
-Un équipement en stock ne possède
-ni salle ni position.
-
-RG06 :
-La localisation graphique d'un
-équipement est représentée par
-une Position.
-
-RG07 :
-Une Position est liée à un seul
-équipement et à un seul plan.
-
-RG08 :
-Les données WinAudit sont importées
-dans GPI afin d'alimenter
-les informations d'inventaire.
-
-RG09 :
-Les rapports d'audit sont conservés
-pour assurer l'historique des collectes.
-
-RG10 :
-Les tickets sont limités au suivi
-des pannes et réclamations
-liées aux équipements.
-
-RG11 :
-Le système GPI ne gère pas
-l'appartenance au domaine.
+Le rapport d'audit est associé
+au matériel correspondant afin
+de conserver l'historique
+des audits.
 end note
 
 @enduml
-
