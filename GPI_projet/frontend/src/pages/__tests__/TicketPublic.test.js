@@ -414,4 +414,74 @@ describe('TicketPublic.vue', () => {
             ).toBeUndefined();
         });
     });
+
+    describe('références ARIA conditionnelles', () => {
+        it('n\'annonce aucun message d\'erreur quand le formulaire est valide', async () => {
+            getEquipementsDashboard.mockResolvedValue([
+                equipementValide(1, 'Vidéoprojecteur', 'INV-001'),
+            ]);
+
+            const { wrapper } = await monter();
+
+            // Sans erreur, aria-describedby doit être absent : l'attribut
+            // ne doit pointer vers aucun id.
+            expect(
+                wrapper.find('#titre').attributes('aria-describedby')
+            ).toBeUndefined();
+            expect(
+                wrapper.find('#description').attributes('aria-describedby')
+            ).toBeUndefined();
+        });
+
+        it('lie aria-describedby au message d\'erreur dès qu\'il apparaît', async () => {
+            getEquipementsDashboard.mockResolvedValue([
+                equipementValide(1, 'Vidéoprojecteur', 'INV-001'),
+            ]);
+            creerTicket.mockResolvedValue({ id: 1 });
+
+            const { wrapper } = await monter();
+
+            await wrapper.find('#equipement').setValue('1');
+            await wrapper
+                .find('#description')
+                .setValue("L'écran ne s'allume plus.");
+            await wrapper.find('form').trigger('submit');
+            await flushPromises();
+
+            expect(wrapper.find('#titre').attributes('aria-describedby')).toBe(
+                'erreur-titre'
+            );
+            expect(wrapper.find('#erreur-titre').exists()).toBe(true);
+            expect(
+                wrapper.find('#titre').attributes('aria-invalid')
+            ).toBe('true');
+
+            // La description est renseignée : aucune référence émise.
+            expect(
+                wrapper.find('#description').attributes('aria-describedby')
+            ).toBeUndefined();
+
+            await wrapper.find('#titre').setValue('Écran noir');
+            await wrapper.find('#description').setValue('');
+            await wrapper.find('form').trigger('submit');
+            await flushPromises();
+
+            expect(
+                wrapper.find('#description').attributes('aria-describedby')
+            ).toBe('erreur-description');
+            expect(wrapper.find('#erreur-description').exists()).toBe(true);
+            expect(
+                wrapper.find('#description').attributes('aria-invalid')
+            ).toBe('true');
+
+            // L'erreur du titre est levée : sa référence disparaît aussi.
+            expect(wrapper.find('#erreur-titre').exists()).toBe(false);
+            expect(
+                wrapper.find('#titre').attributes('aria-describedby')
+            ).toBeUndefined();
+            expect(wrapper.find('#titre').attributes('aria-invalid')).toBe(
+                'false'
+            );
+        });
+    });
 });
