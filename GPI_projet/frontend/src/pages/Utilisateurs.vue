@@ -1,129 +1,195 @@
 <template>
-    <div class="utilisateurs-page">
+    <div class="page-container utilisateurs-page">
 
-        <div class="page-header">
+        <!-- En-tête -->
+
+        <div class="page-heading">
             <div>
-                <h1>Utilisateurs</h1>
-                <p>Gestion des comptes et des rôles.</p>
+                <h1 class="page-heading__title">
+                    Utilisateurs
+                </h1>
+
+                <p class="page-heading__subtitle">
+                    Comptes disposant d'un accès à l'administration.
+                </p>
             </div>
 
-            <button
-                v-if="estAdmin"
-                class="btn-primary"
-                @click="ouvrirCreation"
-            >
-                + Nouvel utilisateur
-            </button>
+            <div class="page-heading__actions">
+                <button
+                    v-if="estAdmin"
+                    type="button"
+                    class="btn-primary"
+                    @click="ouvrirCreation"
+                >
+                    Nouvel utilisateur
+                </button>
+            </div>
         </div>
 
+        <!-- Erreur -->
 
-        <!-- Message d'erreur -->
-
-        <div v-if="erreur" class="message erreur">
-            {{ erreur }}
-        </div>
-
+        <AppAlert
+            v-if="erreur"
+            type="error"
+            :message="erreur"
+        />
 
         <!-- Chargement -->
 
-        <div v-if="chargement" class="message">
-            Chargement des utilisateurs...
-        </div>
+        <LoadingState
+            v-if="chargement"
+            titre="Chargement des utilisateurs…"
+        />
 
+        <!-- Aucun compte -->
+
+        <EmptyState
+            v-else-if="utilisateurs.length === 0"
+            titre="Aucun compte"
+            message="Aucun compte n'est enregistré sur l'application."
+        >
+            <button
+                v-if="estAdmin"
+                type="button"
+                class="btn-primary btn-sm"
+                @click="ouvrirCreation"
+            >
+                Créer le premier compte
+            </button>
+        </EmptyState>
 
         <!-- Liste -->
 
-        <div v-else class="table-container">
+        <template v-else>
+            <p class="resultats-compte">
+                <span class="resultats-compte__valeur">
+                    {{ utilisateurs.length }}
+                </span>
+                compte{{ utilisateurs.length > 1 ? 's' : '' }}
+            </p>
 
-            <table>
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden">
+                        Comptes enregistrés et actions d'administration
+                    </caption>
 
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nom d'utilisateur</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
+                    <thead>
+                        <tr>
+                            <th scope="col">Identifiant</th>
 
-                        <th v-if="estAdmin">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
+                            <th scope="col">
+                                Nom d'utilisateur
+                            </th>
 
-                <tbody>
+                            <th scope="col">
+                                Adresse e-mail
+                            </th>
 
-                    <tr
-                        v-for="utilisateur in utilisateurs"
-                        :key="utilisateur.id"
-                    >
+                            <th scope="col">
+                                Rôle
+                            </th>
 
-                        <td>
-                            {{ utilisateur.id }}
-                        </td>
-
-                        <td>
-                            {{ utilisateur.username }}
-                        </td>
-
-                        <td>
-                            {{ utilisateur.email || "-" }}
-                        </td>
-
-                        <td>
-
-                            <span
-                                class="role"
-                                :class="{
-                                    admin:
-                                        utilisateur.role === 'ADMIN',
-
-                                    user:
-                                        utilisateur.role === 'USER'
-                                }"
+                            <th
+                                v-if="estAdmin"
+                                scope="col"
                             >
-                                {{ utilisateur.role }}
-                            </span>
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
 
-                        </td>
+                    <tbody>
+                        <tr
+                            v-for="utilisateur in utilisateurs"
+                            :key="utilisateur.id"
+                        >
+                            <td class="cellule-id">
+                                {{ utilisateur.id }}
+                            </td>
 
-                        <td v-if="estAdmin">
+                            <td>
+                                <span class="utilisateur-nom">
+                                    {{ utilisateur.username }}
+                                </span>
+                            </td>
 
-                            <button
-                                class="btn-edit"
-                                @click="ouvrirModification(utilisateur)"
+                            <td>
+                                <span
+                                    v-if="utilisateur.email"
+                                    class="cellule-mono"
+                                >
+                                    {{ utilisateur.email }}
+                                </span>
+
+                                <span
+                                    v-else
+                                    class="text-muted"
+                                >
+                                    Non renseignée
+                                </span>
+                            </td>
+
+                            <!--
+                                Le rôle est la seule information de
+                                statut réellement exposée par l'API :
+                                l'API ne renvoie ni is_active ni
+                                dernière connexion.
+                            -->
+                            <td>
+                                <span
+                                    class="role"
+                                    :class="`role-${utilisateur.role.toLowerCase()}`"
+                                >
+                                    {{ libelleRole(utilisateur.role) }}
+                                </span>
+                            </td>
+
+                            <td
+                                v-if="estAdmin"
+                                class="cellule-actions"
                             >
-                                Modifier
-                            </button>
+                                <div class="actions-cellule">
+                                    <button
+                                        type="button"
+                                        class="btn-edit btn-sm"
+                                        @click="ouvrirModification(utilisateur)"
+                                    >
+                                        Modifier
+                                    </button>
 
-                            <button
-                                class="btn-delete"
-                                @click="supprimer(utilisateur)"
-                            >
-                                Supprimer
-                            </button>
+                                    <button
+                                        type="button"
+                                        class="btn-delete btn-sm"
+                                        @click="demanderSuppression(utilisateur)"
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </template>
 
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-
-        <!-- FORMULAIRE -->
+        <!-- Formulaire -->
 
         <div
             v-if="formulaireVisible"
             class="modal-overlay"
             @click.self="fermerFormulaire"
         >
-
-            <div class="modal">
-
-                <h2>
+            <div
+                class="modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titre-formulaire-utilisateur"
+            >
+                <h2
+                    id="titre-formulaire-utilisateur"
+                    class="formulaire__titre"
+                >
                     {{
                         modeModification
                             ? "Modifier l'utilisateur"
@@ -131,84 +197,144 @@
                     }}
                 </h2>
 
+                <p class="formulaire__legende">
+                    Les champs marqués d'un astérisque sont obligatoires.
+                </p>
+
+                <AppAlert
+                    v-if="erreur"
+                    type="error"
+                    :message="erreur"
+                />
 
                 <form @submit.prevent="enregistrer">
+                    <div class="formulaire__groupe">
+                        <p class="formulaire__groupe-titre">
+                            Identité
+                        </p>
 
-                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="utilisateur-username">
+                                Nom d'utilisateur
+                                <span
+                                    class="requis"
+                                    aria-hidden="true"
+                                >*</span>
+                            </label>
 
-                        <label>
-                            Nom d'utilisateur
-                        </label>
+                            <input
+                                id="utilisateur-username"
+                                v-model="formulaire.username"
+                                type="text"
+                                required
+                                :disabled="saving"
+                            >
+                        </div>
 
-                        <input
-                            v-model="formulaire.username"
-                            type="text"
-                            required
-                        >
+                        <div class="form-group">
+                            <label for="utilisateur-email">
+                                Adresse e-mail
+                            </label>
 
+                            <input
+                                id="utilisateur-email"
+                                v-model="formulaire.email"
+                                type="email"
+                                :disabled="saving"
+                            >
+                        </div>
                     </div>
 
+                    <div class="formulaire__groupe">
+                        <p class="formulaire__groupe-titre">
+                            Rôle et accès
+                        </p>
 
-                    <div class="form-group">
+                        <div class="form-group">
+                            <!--
+                                En modification, le rôle n'est pas
+                                modifiable : l'API le rejette en
+                                écriture sur une mise à jour. Il est
+                                donc présenté comme une valeur, et
+                                non comme un champ, pour ne pas
+                                afficher un choix qui serait
+                                silencieusement ignoré.
+                            -->
+                            <label
+                                v-if="!modeModification"
+                                for="utilisateur-role"
+                            >
+                                Rôle
+                            </label>
 
-                        <label>
-                            Email
-                        </label>
+                            <p
+                                v-else
+                                class="champ-etiquette"
+                            >
+                                Rôle
+                            </p>
 
-                        <input
-                            v-model="formulaire.email"
-                            type="email"
-                        >
+                            <select
+                                v-if="!modeModification"
+                                id="utilisateur-role"
+                                v-model="formulaire.role"
+                                :disabled="saving"
+                            >
+                                <option value="USER">
+                                    Utilisateur
+                                </option>
 
+                                <option value="ADMIN">
+                                    Administrateur
+                                </option>
+                            </select>
+
+                            <p
+                                v-else
+                                class="role role-affichage"
+                            >
+                                {{ libelleRole(formulaire.role) }}
+                            </p>
+
+                            <p class="champ-aide">
+                                <template v-if="modeModification">
+                                    Le rôle est fixé à la création du
+                                    compte et ne peut pas être modifié
+                                    ensuite.
+                                </template>
+
+                                <template v-else>
+                                    Seul un administrateur peut accéder à
+                                    l'espace de gestion.
+                                </template>
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="utilisateur-password">
+                                Mot de passe
+                            </label>
+
+                            <input
+                                id="utilisateur-password"
+                                v-model="formulaire.password"
+                                type="password"
+                                :required="!modeModification"
+                                :disabled="saving"
+                                :placeholder="
+                                    modeModification
+                                        ? 'Laisser vide pour conserver le mot de passe'
+                                        : ''
+                                "
+                            >
+                        </div>
                     </div>
 
-
-                    <div class="form-group">
-
-                        <label>
-                            Rôle
-                        </label>
-
-                        <select
-                            v-model="formulaire.role"
-                        >
-                            <option value="USER">
-                                Utilisateur
-                            </option>
-
-                            <option value="ADMIN">
-                                Administrateur
-                            </option>
-                        </select>
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label>
-                            Mot de passe
-                        </label>
-
-                        <input
-                            v-model="formulaire.password"
-                            type="password"
-                            :required="!modeModification"
-                            :placeholder="
-                                modeModification
-                                    ? 'Laisser vide pour conserver le mot de passe'
-                                    : ''
-                            "
-                        >
-
-                    </div>
-
-
-                    <div class="form-actions">
-
+                    <div class="formulaire__actions">
                         <button
                             type="button"
-                            class="btn-cancel"
+                            class="btn-secondary"
+                            :disabled="saving"
                             @click="fermerFormulaire"
                         >
                             Annuler
@@ -217,24 +343,41 @@
                         <button
                             type="submit"
                             class="btn-primary"
+                            :disabled="saving"
                         >
-                            Enregistrer
+                            {{ saving ? "Enregistrement…" : "Enregistrer" }}
                         </button>
-
                     </div>
-
                 </form>
-
             </div>
-
         </div>
+
+        <!-- Confirmation de suppression -->
+
+        <ConfirmDialog
+            v-if="utilisateurASupprimer"
+            titre="Supprimer ce compte ?"
+            :message="`Le compte « ${utilisateurASupprimer.username} » sera définitivement supprimé.`"
+            consequence="Cette personne ne pourra plus se connecter à l'administration. Cette action est irréversible."
+            @confirm="supprimer"
+            @cancel="utilisateurASupprimer = null"
+        />
 
     </div>
 </template>
 
-
 <script setup>
-
+/**
+ * Gestion des comptes disposant d'un accès à l'administration.
+ *
+ * Les seules actions proposées sont celles qui existent déjà côté
+ * API : création, modification et suppression. Aucune fonctionnalité
+ * n'est ajoutée, en particulier pas d'activation ou de
+ * désactivation, l'API n'exposant aucun de ces champs.
+ *
+ * `estAdmin` ne protège que l'affichage : l'autorisation effective
+ * reste vérifiée par Django.
+ */
 import { computed, onMounted, ref } from "vue";
 
 import { useAuthStore } from "../stores/auth";
@@ -246,22 +389,24 @@ import {
     supprimerUtilisateur
 } from "../services/utilisateurService";
 
+import AppAlert from "../components/AppAlert.vue";
+import ConfirmDialog from "../components/ConfirmDialog.vue";
+import EmptyState from "../components/EmptyState.vue";
+import LoadingState from "../components/LoadingState.vue";
 
 const authStore = useAuthStore();
 
-
 /*
- * Vérifie que l'utilisateur connecté
- * possède le rôle ADMIN.
+ * Vérifie que l'utilisateur connecté possède le rôle ADMIN.
  */
 const estAdmin = computed(() => {
     return authStore.isAdmin;
 });
 
-
 const utilisateurs = ref([]);
 
 const chargement = ref(false);
+const saving = ref(false);
 
 const erreur = ref("");
 
@@ -270,7 +415,7 @@ const formulaireVisible = ref(false);
 const modeModification = ref(false);
 
 const utilisateurSelectionne = ref(null);
-
+const utilisateurASupprimer = ref(null);
 
 /*
  * Données du formulaire.
@@ -282,57 +427,57 @@ const formulaire = ref({
     password: "",
 });
 
+const FORMULAIRE_VIDE = {
+    username: "",
+    email: "",
+    role: "USER",
+    password: "",
+};
+
+/*
+ * Libellés lisibles des rôles, repris des choix du modèle Django.
+ */
+const LIBELLES_ROLE = {
+    ADMIN: "Administrateur",
+    USER: "Utilisateur",
+};
+
+function libelleRole(role) {
+    return LIBELLES_ROLE[role] || role || "—";
+}
 
 /*
  * Réinitialise le formulaire.
  */
 function reinitialiserFormulaire() {
-
-    formulaire.value = {
-        username: "",
-        email: "",
-        role: "USER",
-        password: "",
-    };
-
+    formulaire.value = { ...FORMULAIRE_VIDE };
 }
-
 
 /*
  * Charge les utilisateurs.
  */
 async function chargerUtilisateurs() {
-
     chargement.value = true;
 
     erreur.value = "";
 
     try {
-
-        utilisateurs.value =
-            await getUtilisateurs();
+        utilisateurs.value = await getUtilisateurs();
 
     } catch (error) {
-
         console.error(error);
 
-        erreur.value =
-            "Impossible de charger les utilisateurs.";
+        erreur.value = "Impossible de charger les utilisateurs.";
 
     } finally {
-
         chargement.value = false;
-
     }
-
 }
-
 
 /*
  * Ouvre le formulaire de création.
  */
 function ouvrirCreation() {
-
     modeModification.value = false;
 
     utilisateurSelectionne.value = null;
@@ -340,15 +485,12 @@ function ouvrirCreation() {
     reinitialiserFormulaire();
 
     formulaireVisible.value = true;
-
 }
-
 
 /*
  * Ouvre le formulaire de modification.
  */
 function ouvrirModification(utilisateur) {
-
     modeModification.value = true;
 
     utilisateurSelectionne.value = utilisateur;
@@ -361,59 +503,48 @@ function ouvrirModification(utilisateur) {
     };
 
     formulaireVisible.value = true;
-
 }
-
 
 /*
  * Ferme le formulaire.
  */
 function fermerFormulaire() {
-
     formulaireVisible.value = false;
-
+    utilisateurSelectionne.value = null;
 }
-
 
 /*
  * Enregistre un utilisateur.
  */
 async function enregistrer() {
-
+    saving.value = true;
     erreur.value = "";
 
     try {
-
         if (modeModification.value) {
-
+            /*
+             * `role` n'est volontairement pas transmis : l'API le
+             * déclare en lecture seule sur une mise à jour et
+             * l'ignorerait. L'envoyer laisserait croire à une
+             * modification du rôle qui n'a pas lieu d'être.
+             */
             const donnees = {
                 username: formulaire.value.username,
                 email: formulaire.value.email,
-                role: formulaire.value.role,
             };
 
             /*
-             * Le mot de passe n'est envoyé que
-             * lorsqu'il a été renseigné.
+             * Le mot de passe n'est envoyé que lorsqu'il a été
+             * renseigné.
              */
             if (formulaire.value.password) {
-
-                donnees.password =
-                    formulaire.value.password;
-
+                donnees.password = formulaire.value.password;
             }
 
-            await modifierUtilisateur(
-                utilisateurSelectionne.value.id,
-                donnees
-            );
+            await modifierUtilisateur(utilisateurSelectionne.value.id, donnees);
 
         } else {
-
-            await creerUtilisateur(
-                formulaire.value
-            );
-
+            await creerUtilisateur(formulaire.value);
         }
 
         fermerFormulaire();
@@ -421,209 +552,170 @@ async function enregistrer() {
         await chargerUtilisateurs();
 
     } catch (error) {
-
         console.error(error);
 
-        erreur.value =
-            "Impossible d'enregistrer l'utilisateur.";
+        erreur.value = "Impossible d'enregistrer l'utilisateur.";
 
+    } finally {
+        saving.value = false;
     }
-
 }
 
+/*
+ * Demande la confirmation avant suppression.
+ */
+function demanderSuppression(utilisateur) {
+    utilisateurASupprimer.value = utilisateur;
+}
 
 /*
- * Supprime un utilisateur.
+ * Supprime un utilisateur, après confirmation explicite.
  */
-async function supprimer(utilisateur) {
+async function supprimer() {
+    const utilisateur = utilisateurASupprimer.value;
 
-    /*
-     * Évite une suppression accidentelle.
-     */
-    const confirmation = confirm(
-        `Supprimer l'utilisateur "${utilisateur.username}" ?`
-    );
-
-    if (!confirmation) {
+    if (!utilisateur) {
         return;
     }
 
     try {
+        await supprimerUtilisateur(utilisateur.id);
 
-        await supprimerUtilisateur(
-            utilisateur.id
-        );
-
+        utilisateurASupprimer.value = null;
         await chargerUtilisateurs();
 
     } catch (error) {
-
         console.error(error);
 
-        erreur.value =
-            "Impossible de supprimer l'utilisateur.";
+        utilisateurASupprimer.value = null;
 
+        erreur.value = "Impossible de supprimer l'utilisateur.";
     }
-
 }
-
 
 onMounted(() => {
-
     chargerUtilisateurs();
-
 });
-
 </script>
 
-
 <style scoped>
-
 .utilisateurs-page {
-    padding: 20px;
-}
-
-.page-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.page-header h1 {
-    margin-bottom: 5px;
+.cellule-id {
+    color: var(--text-light);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
 }
 
-.page-header p {
-    margin: 0;
-    color: #666;
-}
-
-.table-container {
-    overflow-x: auto;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th,
-td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-th {
+.utilisateur-nom {
     font-weight: 600;
+    color: var(--text-main);
 }
 
+.cellule-mono {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+/*
+ * Rôle : la forme distingue les deux rôles, pas seulement leur
+ * couleur. L'administrateur est plein, l'utilisateur est évidé.
+ */
 .role {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 5px;
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-medium);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.role-admin {
+    background-color: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.role-user {
+    background-color: var(--bg-surface);
+    color: var(--secondary);
+    border-color: var(--border-medium);
+    border-style: dashed;
+}
+
+/* Rôle en lecture seule dans le formulaire de modification. */
+.role-affichage {
+    display: flex;
+    width: fit-content;
+}
+
+/*
+ * Étiquette d'une valeur non modifiable : même présentation qu'un
+ * label, mais ce n'est pas un `label` puisqu'aucun champ n'est
+ * associé.
+ */
+.champ-etiquette {
+    margin-bottom: 0.35rem;
+    color: var(--text-main);
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
-.role.admin {
-    background: #eee;
+.actions-cellule {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
 }
 
-.role.user {
-    background: #f5f5f5;
+.cellule-actions {
+    white-space: nowrap;
 }
 
-button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.champ-aide {
+    margin: 0.35rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
 }
 
-.btn-primary {
-    background: #222;
-    color: white;
-}
-
-.btn-edit {
-    margin-right: 8px;
-}
-
-.btn-delete {
-    color: #b00020;
-}
-
-.message {
-    padding: 30px;
-    text-align: center;
-}
-
-.erreur {
-    color: #b00020;
-}
-
-
-/* Fenêtre modale */
+/* Modale */
 
 .modal-overlay {
-    position: fixed;
-    inset: 0;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    background: rgba(0, 0, 0, 0.4);
-
     z-index: 1000;
+    padding: 1.5rem;
 }
 
 .modal {
-    width: 450px;
-    max-width: 90%;
-
-    padding: 25px;
-
-    background: white;
-    border-radius: 10px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-.form-group input,
-.form-group select {
     width: 100%;
-    padding: 9px;
-
-    border: 1px solid #ccc;
-    border-radius: 5px;
-
-    box-sizing: border-box;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
 }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-
-    margin-top: 20px;
+.formulaire__groupe {
+    margin: 0 0 1rem;
+    padding: 0 0 0.25rem;
+    border: none;
+    border-bottom: 1px solid var(--border-light);
 }
 
-.btn-cancel {
-    background: #eee;
+.formulaire__groupe:last-of-type {
+    margin-bottom: 0;
+    border-bottom: none;
 }
 
+@media (max-width: 640px) {
+    .actions-cellule {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
 </style>

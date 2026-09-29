@@ -195,7 +195,7 @@ onMounted(() => {
 
 .dashboard-header p {
     margin-top: 8px;
-    color: #666;
+    color: var(--text-muted);
 }
 
 /* Statistiques */
@@ -219,12 +219,12 @@ onMounted(() => {
 
     padding: 22px;
 
-    background: white;
+    background: var(--bg-surface);
 
     border-radius: 10px;
 
     box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.08);
+        var(--shadow-md);
 }
 
 .icone {
@@ -234,7 +234,7 @@ onMounted(() => {
 .carte-statistique p {
     margin: 0 0 5px;
 
-    color: #666;
+    color: var(--text-muted);
 }
 
 .carte-statistique h2 {
@@ -248,12 +248,12 @@ onMounted(() => {
 .resume {
     padding: 25px;
 
-    background: white;
+    background: var(--bg-surface);
 
     border-radius: 10px;
 
     box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.08);
+        var(--shadow-md);
 }
 
 .resume h2 {
@@ -263,7 +263,7 @@ onMounted(() => {
 .resume p {
     line-height: 1.6;
 
-    color: #444;
+    color: var(--text-main);
 }
 
 /* Messages */
@@ -271,13 +271,13 @@ onMounted(() => {
 .message {
     padding: 20px;
 
-    background: white;
+    background: var(--bg-surface);
 
     border-radius: 10px;
 }
 
 .erreur {
-    color: #b00020;
+    color: var(--danger-text);
 }
 
 </style>

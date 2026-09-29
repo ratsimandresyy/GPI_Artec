@@ -1,211 +1,564 @@
 <template>
-    <div class="equipement-detail">
+    <div class="page-container equipement-detail-page">
 
-        <div class="back-button-container">
-            <button @click="retour" class="back-button">
-                ← Retour
-            </button>
-        </div>
+        <!-- Retour à la liste -->
 
-        <div class="page-header">
-            <div>
-                <h1>Détail de l'équipement</h1>
-                <p v-if="equipement">{{ equipement.nom }}</p>
-            </div>
-
-            <div v-if="estAdmin" class="header-actions">
-                <button
-                    type="button"
-                    class="action-button danger"
-                    @click="supprimer"
-                >
-                    Supprimer
-                </button>
-            </div>
-        </div>
+        <router-link
+            to="/equipements"
+            class="btn-ghost btn-sm retour-liste"
+        >
+            <span aria-hidden="true">←</span>
+            Retour à la liste des équipements
+        </router-link>
 
         <!-- Chargement -->
-        <p v-if="loading">
-            Chargement...
-        </p>
+
+        <LoadingState
+            v-if="loading"
+            titre="Chargement de la fiche équipement…"
+        />
 
         <!-- Erreur -->
-        <p v-else-if="errorMessage" class="error">
-            {{ errorMessage }}
-        </p>
 
-        <!-- Informations -->
-        <div v-else-if="equipement" class="card">
+        <AppAlert
+            v-else-if="errorMessage"
+            type="error"
+        >
+            <p class="erreur-titre">
+                {{ erreurTitre }}
+            </p>
 
-            <div class="section">
-                <h3>Informations générales</h3>
+            <p>{{ errorMessage }}</p>
 
-                <div class="information">
-                    <strong>ID :</strong>
-                    <span>{{ equipement.id }}</span>
+            <router-link
+                to="/equipements"
+                class="btn-secondary btn-sm"
+            >
+                Revenir à la liste
+            </router-link>
+        </AppAlert>
+
+        <!-- Fiche -->
+
+        <template v-else-if="equipement">
+            <div class="page-heading">
+                <div>
+                    <h1 class="page-heading__title">
+                        {{ equipement.nom }}
+                    </h1>
+
+                    <p class="page-heading__subtitle">
+                        {{ libelleType(equipement.type) }}
+                        <span aria-hidden="true">·</span>
+                        N° d'inventaire {{ equipement.numero_inventaire }}
+                    </p>
                 </div>
 
-                <div class="information">
-                    <strong>Type :</strong>
-                    <span>{{ equipement.type }}</span>
-                </div>
+                <div class="page-heading__actions">
+                    <router-link
+                        v-if="equipement.salle"
+                        to="/plan"
+                        class="btn-secondary btn-sm"
+                    >
+                        Voir sur le plan
+                    </router-link>
 
-                <div class="information">
-                    <strong>Numéro d'inventaire :</strong>
-                    <span>
-                        {{ equipement.numero_inventaire }}
-                    </span>
-                </div>
-
-                <div class="information">
-                    <strong>Numéro de série :</strong>
-                    <span>
-                        {{ equipement.numero_serie || "-" }}
-                    </span>
-                </div>
-
-                <div class="information">
-                    <strong>Fabricant :</strong>
-                    <span>
-                        {{ equipement.fabricant || "-" }}
-                    </span>
-                </div>
-
-                <div class="information">
-                    <strong>Modèle :</strong>
-                    <span>
-                        {{ equipement.modele || "-" }}
-                    </span>
-                </div>
-            </div>
-
-            <div class="section">
-                <h3>Réseau</h3>
-
-                <div class="information">
-                    <strong>Adresse IP :</strong>
-                    <span>
-                        {{ equipement.adresse_ip || "-" }}
-                    </span>
-                </div>
-
-                <div class="information">
-                    <strong>Adresse MAC :</strong>
-                    <span>
-                        {{ equipement.adresse_mac || "-" }}
-                    </span>
+                    <button
+                        v-if="estAdmin"
+                        type="button"
+                        class="btn-delete btn-sm"
+                        @click="demanderSuppression"
+                    >
+                        Supprimer
+                    </button>
                 </div>
             </div>
 
-            <div class="section">
-                <h3>Localisation</h3>
+            <p
+                v-if="!estAdmin"
+                class="mention-visiteur"
+            >
+                Consultation en lecture seule. Les informations techniques
+                d'inventaire et de réseau sont réservées à l'administration.
+            </p>
 
-                <div class="information">
-                    <strong>Salle :</strong>
-                    <span>
-                        {{ equipement.salle || "-" }}
+            <!--
+                Résumé opérationnel : état et situation sont les deux
+                informations qui décident d'une intervention. Elles
+                sont placées au-dessus des fiches pour être lues sans
+                parcourir la page.
+            -->
+            <section
+                class="carte-resume"
+                aria-labelledby="titre-resume"
+            >
+                <h2
+                    id="titre-resume"
+                    class="carte-resume__titre visually-hidden"
+                >
+                    Résumé
+                </h2>
+
+                <div class="carte-resume__item">
+                    <span class="carte-resume__cle">
+                        État
+                    </span>
+
+                    <span
+                        class="badge-etat"
+                        :class="`etat-${equipement.etat.toLowerCase()}`"
+                    >
+                        {{ libelleEtat(equipement.etat) }}
                     </span>
                 </div>
 
-                <div class="information">
-                    <strong>État :</strong>
-                    <span :class="`etat-${equipement.etat.toLowerCase()}`">
-                        {{ equipement.etat || "-"}}
+                <div class="carte-resume__item">
+                    <span class="carte-resume__cle">
+                        Situation
+                    </span>
+
+                    <span
+                        class="badge-situation"
+                        :class="`situation-${equipement.situation.toLowerCase()}`"
+                    >
+                        {{ libelleSituation(equipement.situation) }}
                     </span>
                 </div>
 
-                <div class="information">
-                    <strong>Situation :</strong>
-                    <span :class="`situation-${equipement.situation.toLowerCase()}`">
-                        {{ equipement.situation || "-"}}
+                <div class="carte-resume__item">
+                    <span class="carte-resume__cle">
+                        Localisation
                     </span>
-                </div>
 
-                <div class="information" v-if="equipement.condition_stock">
-                    <strong>Condition du stock :</strong>
-                    <span>
-                        {{ equipement.condition_stock }}
+                    <span class="carte-resume__valeur">
+                        {{ localisation.batiment }} · {{ localisation.etage }} · {{ localisation.salle }}
                     </span>
                 </div>
+            </section>
+
+            <div class="grille-fiches">
+
+                <!-- Identification -->
+
+                <section
+                    class="fiche"
+                    aria-labelledby="titre-identification"
+                >
+                    <h2
+                        id="titre-identification"
+                        class="fiche__titre"
+                    >
+                        Identification
+                    </h2>
+
+                    <dl class="fiche__liste">
+                        <div class="fiche__ligne">
+                            <dt>Nom</dt>
+                            <dd>{{ equipement.nom }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Type</dt>
+                            <dd>{{ libelleType(equipement.type) }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Fabricant</dt>
+                            <dd>{{ equipement.fabricant || "—" }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Modèle</dt>
+                            <dd>{{ equipement.modele || "—" }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>N° d'inventaire</dt>
+                            <dd class="mono">
+                                {{ equipement.numero_inventaire }}
+                            </dd>
+                        </div>
+
+                        <!--
+                            Le numéro de série n'est pas exposé au
+                            visiteur : il n'apparaît que pour
+                            l'administration.
+                        -->
+                        <div
+                            v-if="estAdmin"
+                            class="fiche__ligne"
+                        >
+                            <dt>N° de série</dt>
+                            <dd class="mono">
+                                {{ equipement.numero_serie || "—" }}
+                            </dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <!-- Localisation -->
+
+                <section
+                    class="fiche"
+                    aria-labelledby="titre-localisation"
+                >
+                    <h2
+                        id="titre-localisation"
+                        class="fiche__titre"
+                    >
+                        Localisation
+                    </h2>
+
+                    <dl class="fiche__liste">
+                        <div class="fiche__ligne">
+                            <dt>Bâtiment</dt>
+                            <dd>{{ localisation.batiment }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Étage</dt>
+                            <dd>{{ localisation.etage }}</dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Salle</dt>
+                            <dd>{{ localisation.salle }}</dd>
+                        </div>
+                    </dl>
+
+                    <p
+                        v-if="!equipement.salle"
+                        class="fiche__note"
+                    >
+                        Cet équipement n'est pas rattaché à une salle : il
+                        n'apparaît donc sur aucun plan.
+                    </p>
+
+                    <router-link
+                        v-else
+                        to="/plan"
+                        class="btn-secondary btn-sm fiche__action"
+                    >
+                        Localiser sur le plan
+                    </router-link>
+                </section>
+
+                <!-- État -->
+
+                <section
+                    class="fiche"
+                    aria-labelledby="titre-etat"
+                >
+                    <h2
+                        id="titre-etat"
+                        class="fiche__titre"
+                    >
+                        État et situation
+                    </h2>
+
+                    <dl class="fiche__liste">
+                        <div class="fiche__ligne">
+                            <dt>État</dt>
+
+                            <dd>
+                                <span
+                                    class="badge-etat"
+                                    :class="`etat-${equipement.etat.toLowerCase()}`"
+                                >
+                                    {{ libelleEtat(equipement.etat) }}
+                                </span>
+                            </dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Situation dans le parc</dt>
+
+                            <dd>
+                                <span
+                                    class="badge-situation"
+                                    :class="`situation-${equipement.situation.toLowerCase()}`"
+                                >
+                                    {{ libelleSituation(equipement.situation) }}
+                                </span>
+                            </dd>
+                        </div>
+
+                        <p class="fiche__explication">
+                            L'état décrit le fonctionnement du matériel ; la
+                            situation décrit sa place dans le parc. Les deux
+                            se combinent : un matériel en panne peut être
+                            affecté comme en stock.
+                        </p>
+
+                        <div
+                            v-if="estAdmin && equipement.condition_stock"
+                            class="fiche__ligne"
+                        >
+                            <dt>Condition du stock</dt>
+                            <dd>
+                                {{ libelleConditionStock(equipement.condition_stock) }}
+                            </dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <!-- Réseau (administration uniquement) -->
+
+                <section
+                    v-if="estAdmin"
+                    class="fiche"
+                    aria-labelledby="titre-reseau"
+                >
+                    <h2
+                        id="titre-reseau"
+                        class="fiche__titre"
+                    >
+                        Réseau
+                    </h2>
+
+                    <dl class="fiche__liste">
+                        <div class="fiche__ligne">
+                            <dt>Adresse IP</dt>
+                            <dd class="mono">
+                                {{ equipement.adresse_ip || "—" }}
+                            </dd>
+                        </div>
+
+                        <div class="fiche__ligne">
+                            <dt>Adresse MAC</dt>
+                            <dd class="mono">
+                                {{ equipement.adresse_mac || "—" }}
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <p
+                        v-if="!equipement.adresse_ip && !equipement.adresse_mac"
+                        class="fiche__note"
+                    >
+                        Aucune information réseau n'est renseignée pour
+                        cet équipement.
+                    </p>
+                </section>
+
             </div>
+        </template>
 
-        </div>
+        <!-- Confirmation de suppression -->
+
+        <ConfirmDialog
+            v-if="suppressionDemandee && estAdmin"
+            titre="Supprimer cet équipement ?"
+            :message="`L'équipement « ${equipement.nom} » sera définitivement supprimé du parc.`"
+            consequence="Cette action est irréversible. L'historique des signalements associés à cet équipement sera également perdu."
+            @confirm="supprimer"
+            @cancel="suppressionDemandee = false"
+        />
 
     </div>
 </template>
 
 <script setup>
+/**
+ * Fiche d'un équipement.
+ *
+ * La présentation est organisée par nature d'information :
+ * identification, localisation, état, puis réseau. Les sections
+ * réservées à l'administration (numéro de série, adresse IP, adresse
+ * MAC, condition de stock) ne sont jamais rendues pour un visiteur,
+ * et le serializer public ne les transmet pas davantage.
+ *
+ * Aucune donnée n'est ajoutée ici : la fiche affiche uniquement ce que
+ * l'API fournit, résolu en libellés lisibles.
+ */
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
 import { useAuthStore } from "../stores/auth";
-import { getEquipement, supprimerEquipement } from "../services/equipementService";
+import {
+    getEquipement,
+    supprimerEquipement
+} from "../services/equipementService";
+import { getBatiments } from "../services/batimentService";
+import { getEtages } from "../services/etageService";
+import { getSalles } from "../services/salleService";
+
+import AppAlert from "../components/AppAlert.vue";
+import ConfirmDialog from "../components/ConfirmDialog.vue";
+import LoadingState from "../components/LoadingState.vue";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
 const equipement = ref(null);
+const salles = ref([]);
+const batiments = ref([]);
+const etages = ref([]);
+
 const loading = ref(false);
 const errorMessage = ref("");
+const introuvable = ref(false);
+const suppressionDemandee = ref(false);
 
 const estAdmin = computed(() => authStore.isAdmin);
 
-/**
- * Récupère l'identifiant présent dans l'URL.
+/*
+ * Libellés lisibles : la classe CSS conserve la valeur brute pour le
+ * contraste visuel, le texte affiché reste compréhensible. Ces tables
+ * reprennent les choix déclarés par le modèle Django ; une valeur
+ * inconnue reste affichée telle quelle.
  */
+const LIBELLES_TYPE = {
+    ORDINATEUR: "Ordinateur",
+};
+
+const LIBELLES_ETAT = {
+    EN_SERVICE: "En service",
+    EN_PANNE: "En panne",
+    EN_MAINTENANCE: "En maintenance",
+    HORS_SERVICE: "Hors service",
+};
+
+const LIBELLES_SITUATION = {
+    AFFECTE: "Affecté",
+    EN_STOCK: "En stock",
+};
+
+const LIBELLES_CONDITION_STOCK = {
+    NEUF: "Neuf",
+    OCCASION: "Occasion",
+    RECONDITIONNE: "Reconditionné",
+};
+
+function libelleType(type) {
+    return LIBELLES_TYPE[type] || type || "—";
+}
+
+function libelleEtat(etat) {
+    return LIBELLES_ETAT[etat] || etat || "—";
+}
+
+function libelleSituation(situation) {
+    return LIBELLES_SITUATION[situation] || situation || "—";
+}
+
+function libelleConditionStock(condition) {
+    return LIBELLES_CONDITION_STOCK[condition] || condition || "—";
+}
+
+/*
+ * L'API renvoie `salle` sous forme d'identifiant. Pour présenter une
+ * localisation lisible (bâtiment / étage / salle), on résout la
+ * hiérarchie à partir des référentiels déjà exposés publiquement.
+ */
+const localisation = computed(() => {
+    const salleId = equipement.value?.salle;
+
+    if (!salleId) {
+        return { batiment: "—", etage: "—", salle: "Non affecté" };
+    }
+
+    const salle = salles.value.find(
+        (item) => String(item.id) === String(salleId)
+    );
+
+    if (!salle) {
+        return { batiment: "—", etage: "—", salle: `Salle ${salleId}` };
+    }
+
+    const etage = etages.value.find(
+        (item) => String(item.id) === String(salle.etage)
+    );
+
+    const batiment = etages.value.length && batiments.value.length
+        ? batiments.value.find(
+            (item) =>
+                etage && String(item.id) === String(etage.batiment)
+        )
+        : null;
+
+    return {
+        batiment: batiment ? batiment.nom : "—",
+        etage: etage ? etage.nom : "—",
+        salle: salle.nom,
+    };
+});
+
+const erreurTitre = computed(() =>
+    introuvable.value
+        ? "Équipement introuvable"
+        : "Chargement impossible"
+);
+
 const id = route.params.id;
 
-/**
- * Charge l'équipement depuis l'API.
- */
+async function chargerReferentiels() {
+    try {
+        const [donneesSalles, donneesEtages, donneesBatiments] =
+            await Promise.all([
+                getSalles(),
+                getEtages(),
+                getBatiments(),
+            ]);
+
+        salles.value = donneesSalles;
+        etages.value = donneesEtages;
+        batiments.value = donneesBatiments;
+
+    } catch (error) {
+        /*
+         * La localisation reste affichée avec les identifiants bruts
+         * si les référentiels sont indisponibles : la fiche principale
+         * n'est pas bloquée par cet appel secondaire.
+         */
+        console.error(
+            "Erreur lors du chargement des référentiels :", error
+        );
+    }
+}
+
 async function chargerEquipement() {
     loading.value = true;
     errorMessage.value = "";
+    introuvable.value = false;
 
     try {
         equipement.value = await getEquipement(id);
+        await chargerReferentiels();
 
     } catch (error) {
+        introuvable.value = error.response?.status === 404;
 
-        console.error(
-            "Erreur lors du chargement de l'équipement :",
-            error
-        );
-
-        errorMessage.value =
-            "Impossible de charger cet équipement.";
+        errorMessage.value = introuvable.value
+            ? `Aucun équipement ne correspond à l'identifiant ${id}.`
+            : "Impossible de charger cet équipement. Vérifiez votre connexion puis réessayez.";
 
     } finally {
         loading.value = false;
     }
 }
 
-/**
- * Retourne à la liste des équipements ou au dashboard public.
+/*
+ * Suppression : action réservée à l'administration.
+ * L'API reste seule juge de l'autorisation effective.
  */
-function retour() {
-    if (estAdmin.value) {
-        router.push("/equipements");
-    } else {
-        router.push("/dashboard-public");
-    }
+function demanderSuppression() {
+    suppressionDemandee.value = true;
 }
 
 async function supprimer() {
-    const confirmation = window.confirm(
-        `Voulez-vous vraiment supprimer l'équipement "${equipement.value.nom}" ?`
-    );
-
-    if (!confirmation) {
-        return;
-    }
-
     try {
         await supprimerEquipement(id);
+        suppressionDemandee.value = false;
         router.push("/equipements");
+
     } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        errorMessage.value = error.response?.data?.detail || "Impossible de supprimer l'équipement.";
+        suppressionDemandee.value = false;
+
+        errorMessage.value =
+            error.response?.data?.detail ||
+            "Impossible de supprimer l'équipement.";
     }
 }
 
@@ -215,163 +568,163 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
-.back-button-container {
-    margin-bottom: 20px;
-}
-
-.back-button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    background: #eee;
-    color: #333;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.back-button:hover {
-    background: #ddd;
-}
-
-.equipement-detail {
-    padding: 30px;
-}
-
-.page-header {
+.equipement-detail-page {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.page-header h1 {
+.retour-liste {
+    align-self: flex-start;
+}
+
+.mention-visiteur {
     margin: 0;
-    font-size: 28px;
+    padding: 0.7rem 0.9rem;
+    background-color: var(--info-light);
+    color: var(--info-text);
+    border: 1px solid var(--info-border);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
 }
 
-.page-header p {
-    margin: 5px 0 0;
-    color: #666;
+.erreur-titre {
+    margin: 0 0 0.25rem;
+    font-weight: 600;
 }
 
-.visitor-note {
-    font-size: 12px;
-    color: #666;
-    font-style: italic;
+.erreur-titre + p {
+    margin: 0 0 0.6rem;
 }
 
-.header-actions {
+/* Résumé opérationnel */
+
+.carte-resume {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.75rem;
+    padding: 0.9rem 1.15rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
-.action-button {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.action-button.danger {
-    background: #dc3545;
-    color: white;
-}
-
-.action-button:not(.danger) {
-    background: #6c757d;
-    color: white;
-}
-
-.card {
-    max-width: 700px;
-    margin-top: 20px;
-    padding: 25px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-}
-
-.section {
-    margin-bottom: 30px;
-}
-
-.section h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #eee;
-}
-
-.information {
+.carte-resume__item {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.carte-resume__cle {
+    color: var(--text-light);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.carte-resume__valeur {
+    color: var(--text-main);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.grille-fiches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.fiche {
+    padding: 1.15rem 1.25rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+}
+
+.fiche__titre {
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.fiche__liste {
+    margin: 0;
+}
+
+.fiche__ligne {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
     justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-light);
 }
 
-.error {
-    color: red;
+.fiche__ligne:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
-button {
-    padding: 8px 15px;
-    cursor: pointer;
+.fiche__ligne dt {
+    color: var(--text-muted);
+    font-size: 0.875rem;
 }
 
-/* Badges d'état */
-.etat-en_service {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #d4edda;
-    color: #155724;
-    font-size: 12px;
-    font-weight: 600;
+.fiche__ligne dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
 }
 
-.etat-en_panne {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #f8d7da;
-    color: #721c24;
-    font-size: 12px;
-    font-weight: 600;
+.fiche__explication {
+    margin: 0.6rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.45;
 }
 
-.etat-en_maintenance {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #fff3cd;
-    color: #856404;
-    font-size: 12px;
-    font-weight: 600;
+.fiche__note {
+    margin: 0.9rem 0 0;
+    padding: 0.7rem 0.85rem;
+    background-color: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
-.etat-hors_service {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #d6d8d9;
-    color: #1b1e21;
-    font-size: 12px;
-    font-weight: 600;
+.fiche__action {
+    margin-top: 0.9rem;
 }
 
-/* Badges de situation */
-.situation-affecte {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #cce5ff;
-    color: #004085;
-    font-size: 12px;
-    font-weight: 600;
+.mono {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
 }
 
-.situation-en_stock {
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: #e2e3e5;
-    color: #383d41;
-    font-size: 12px;
-    font-weight: 600;
-}
+@media (max-width: 640px) {
+    .grille-fiches {
+        grid-template-columns: 1fr;
+    }
 
+    .fiche__ligne {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+    }
+
+    .fiche__ligne dd {
+        text-align: left;
+    }
+}
 </style>
