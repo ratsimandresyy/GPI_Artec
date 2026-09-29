@@ -109,7 +109,7 @@
                             placeholder="Ex. : écran noir au démarrage"
                             :disabled="creationEnCours"
                             :aria-invalid="erreurs.titre ? 'true' : 'false'"
-                            aria-describedby="erreur-titre"
+                            :aria-describedby="erreurs.titre ? 'erreur-titre' : undefined"
                             required
                         >
 
@@ -183,7 +183,7 @@
                             placeholder="Décrivez ce qui se passe, depuis quand, et tout élément utile au diagnostic."
                             :disabled="creationEnCours"
                             :aria-invalid="erreurs.description ? 'true' : 'false'"
-                            aria-describedby="erreur-description"
+                            :aria-describedby="erreurs.description ? 'erreur-description' : undefined"
                             required
                         ></textarea>
 

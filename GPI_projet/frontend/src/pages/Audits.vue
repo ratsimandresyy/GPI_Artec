@@ -317,7 +317,7 @@
                                 type="button"
                                 class="btn-ghost btn-sm"
                                 :aria-expanded="afficherDonneesBrutes ? 'true' : 'false'"
-                                aria-controls="audit-donnees-brutes"
+                                :aria-controls="afficherDonneesBrutes ? 'audit-donnees-brutes' : undefined"
                                 @click="afficherDonneesBrutes = !afficherDonneesBrutes"
                             >
                                 {{

@@ -193,7 +193,7 @@
                             :class="{
                                 'champ-obligatoire': erreurChamp('numero'),
                             }"
-                            aria-describedby="etage-numero-erreur"
+                            :aria-describedby="erreurChamp('numero') ? 'etage-numero-erreur' : undefined"
                         >
 
                         <p
@@ -223,7 +223,7 @@
                             :class="{
                                 'champ-obligatoire': erreurChamp('nom'),
                             }"
-                            aria-describedby="etage-nom-erreur"
+                            :aria-describedby="erreurChamp('nom') ? 'etage-nom-erreur' : undefined"
                             placeholder="Ex : Premier étage"
                         >
 

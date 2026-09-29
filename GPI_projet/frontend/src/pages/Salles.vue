@@ -191,7 +191,7 @@
                             :class="{
                                 'champ-obligatoire': erreurChamp('nom'),
                             }"
-                            aria-describedby="salle-nom-erreur"
+                            :aria-describedby="erreurChamp('nom') ? 'salle-nom-erreur' : undefined"
                             placeholder="Ex : Salle 101"
                         >
 

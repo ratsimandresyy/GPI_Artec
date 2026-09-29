@@ -167,7 +167,7 @@
                         :class="{
                             'champ-obligatoire': erreurChamp('nom'),
                         }"
-                        aria-describedby="batiment-nom-erreur"
+                        :aria-describedby="erreurChamp('nom') ? 'batiment-nom-erreur' : undefined"
                         placeholder="Ex : Bâtiment A"
                     >
 
