@@ -60,5 +60,26 @@ export const useAuthStore = defineStore("auth", {
             localStorage.removeItem("refreshToken");
             localStorage.removeItem("user");
         },
+
+        /*
+         * Met à jour l'utilisateur connecté après une modification de
+         * son profil.
+         *
+         * La persistance est assurée ici : le store reste le seul
+         * point d'écriture de l'état de session, ce qui évite que
+         * chaque page manipule localStorage.
+         */
+        mettreAJourUtilisateur(champs) {
+            if (!this.user) {
+                return;
+            }
+
+            this.user = { ...this.user, ...champs };
+
+            localStorage.setItem(
+                "user",
+                JSON.stringify(this.user)
+            );
+        },
     },
 });

@@ -170,13 +170,40 @@ STATIC_URL = 'static/'
 
 CORS_ALLOWED_ORIGINS = variable_liste(
     "CORS_ALLOWED_ORIGINS",
-    defaut=("http://localhost:5173",),
+    defaut=(
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ),
 )
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Les tests ecrivent leurs images (plans) dans un repertoire
+# temporaire et jamais dans MEDIA_ROOT : voir config/test_runner.py.
+TEST_RUNNER = "config.test_runner.MediaIsoleTestRunner"
+
+# Politique API : privée par défaut (administrateur authentifié).
+# Les lectures visiteur et le signalement public sont déclarés
+# explicitement sur les ViewSets concernés (AllowAny / lecture seule).
+#
+# Rate limiting (par adresse IP, AnonRateThrottle) :
+# - login         : POST /api/auth/login/          — 5 tentatives / minute
+# - ticket_create : POST /api/inventaire/tickets-panne/ — 10 signalements / heure
+#
+# Ces plafonds se règlent via DEFAULT_THROTTLE_RATES ci-dessous.
+# Ils ne s'appliquent pas aux autres endpoints (pas de throttle global).
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",),
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "accounts.permissions.IsAdministrateur",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "5/min",
+        "ticket_create": "10/hour",
+    },
 }

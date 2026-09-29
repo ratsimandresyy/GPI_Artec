@@ -1,8 +1,10 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, SAFE_METHODS
 from rest_framework.response import Response
-from accounts.permissions import IsAdministrateurOrReadOnly, IsUserOrAdministrateur
-from django.db import models
+
+from accounts.permissions import IsAdministrateur, IsAdministrateurOrReadOnly
+from accounts.throttles import TicketCreateRateThrottle
 
 from .models import (
     Batiment,
@@ -19,6 +21,7 @@ from .serializers import (
     EtageSerializer,
     SalleSerializer,
     EquipementSerializer,
+    EquipementPublicSerializer,
     PlanSerializer,
     PositionSerializer,
     PositionDetailSerializer,
@@ -26,6 +29,7 @@ from .serializers import (
 )
 
 from .services.panne_service import PanneService
+from .services.recherche_service import RechercheService
 from .services.stock_service import StockService
 from .services.localisation_service import LocalisationService
 
@@ -36,41 +40,47 @@ class BatimentViewSet(viewsets.ModelViewSet):
     serializer_class = BatimentSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
 
 class EtageViewSet(viewsets.ModelViewSet):
     queryset = Etage.objects.all()
     serializer_class = EtageSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
 
 class SalleViewSet(viewsets.ModelViewSet):
     queryset = Salle.objects.all()
     serializer_class = SalleSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
 
 class EquipementViewSet(viewsets.ModelViewSet):
-    queryset = Equipement.objects.all()
+    queryset = Equipement.objects.select_related("salle").all()
     serializer_class = EquipementSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
-    def get_permissions(self):
-        # Autoriser l'accès public en lecture seule pour les visiteurs
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
+    def _est_administrateur(self) -> bool:
+        """
+        Delegue la verification du role a IsAdministrateur.
+
+        La regle "qui est administrateur" reste definie a un seul
+        endroit (accounts/permissions.py) et n'est pas dupliquee ici.
+        """
+        if self.request is None:
+            return False
+
+        return IsAdministrateur().has_permission(self.request, self)
+
+    def get_serializer_class(self):
+        """
+        Le visiteur lit une representation reduite de l'equipement ;
+        l'administrateur conserve la representation complete, y
+        compris sur les endpoints de lecture qu'il utilise pour son
+        travail (tableau de parc, fiche detaillee).
+        """
+        if self.request.method in SAFE_METHODS and not self._est_administrateur():
+            return EquipementPublicSerializer
+
+        return EquipementSerializer
 
     @action(
         detail = False,
@@ -78,25 +88,24 @@ class EquipementViewSet(viewsets.ModelViewSet):
         url_path = "rechercher",
     )
     def rechercher(self, request):
-        terme = request.query_params.get("q", "").strip()
+        try:
+            equipements = RechercheService.rechercher_equipements(
+                queryset = self.get_queryset(),
+                terme = request.query_params.get("q", ""),
+            )
 
-        if not terme :
+        except ValueError as error:
             return Response(
                 {
-                    "detail": "Le paramètre 'q' est obligatoire." 
+                    "detail": str(error)
                 },
                 status = status.HTTP_400_BAD_REQUEST
             )
 
-        equipements = self.get_queryset().filter(
-            models.Q(nom__icontains=terme)
-            | models.Q(numero_inventaire__icontains=terme)
-        )
-
         serializer = self.get_serializer(
             equipements,
             many=True,
-    )
+        )
 
         return Response(serializer.data)
 
@@ -238,10 +247,6 @@ class PlanViewSet(viewsets.ModelViewSet):
     serializer_class = PlanSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
 
 class PositionViewSet(viewsets.ModelViewSet):
     """
@@ -255,15 +260,10 @@ class PositionViewSet(viewsets.ModelViewSet):
         "equipement",
         "plan",
         "equipement__salle",
-        )
+    )
 
     serializer_class = PositionDetailSerializer
     permission_classes = [IsAdministrateurOrReadOnly]
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return []
-        return [permission() for permission in self.permission_classes]
 
     @action(
         detail=False,
@@ -463,21 +463,20 @@ class PositionViewSet(viewsets.ModelViewSet):
 class TicketPanneViewSet(viewsets.ModelViewSet):
     queryset = TicketPanne.objects.select_related("equipement").all()
     serializer_class = TicketPanneSerializer
+    permission_classes = [IsAdministrateur]
+
+    TYPES_SIGNALEMENT = ("MAINTENANCE", "RECLAMATION")
+    PRIORITES_SIGNALEMENT = ("BASSE", "NORMALE", "HAUTE")
 
     def get_permissions(self):
         if self.action == "create":
-            # Création de ticket publique (sans authentification)
-            permission_classes = []
-        elif self.action in (
-            "prendre_en_charge",
-            "resoudre",
-            "qualifier",
-        ):
-            permission_classes = [IsAdministrateurOrReadOnly]
-        else:
-            permission_classes = [IsUserOrAdministrateur]
+            return [AllowAny()]
+        return [IsAdministrateur()]
 
-        return [permission() for permission in permission_classes]
+    def get_throttles(self):
+        if self.action == "create":
+            return [TicketCreateRateThrottle()]
+        return []
 
     def update(self, request, *args, **kwargs):
         return Response(
@@ -496,48 +495,82 @@ class TicketPanneViewSet(viewsets.ModelViewSet):
     )
 
     def create(self, request, *args, **kwargs):
-
         equipement_id = request.data.get("equipement")
         titre = request.data.get("titre", "")
         description = request.data.get("description")
         type_ticket = request.data.get("type", "MAINTENANCE")
         priorite = request.data.get("priorite", "NORMALE")
 
-        #vérification de la présence des données nécessaires
         if not equipement_id or not description:
             return Response(
                 {
-                    "detail": "L'équipement et la description sont obligatoires."
+                    "detail": (
+                        "L'équipement et la description sont obligatoires."
+                    )
                 },
-                status = status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Recherche de l'équipement concerné
+        if type_ticket not in self.TYPES_SIGNALEMENT:
+            return Response(
+                {
+                    "detail": (
+                        "Le type de signalement doit être "
+                        "MAINTENANCE ou RECLAMATION."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if priorite == "CRITIQUE":
+            return Response(
+                {
+                    "detail": (
+                        "La priorité CRITIQUE est réservée "
+                        "à l'administration."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if priorite not in self.PRIORITES_SIGNALEMENT:
+            return Response(
+                {
+                    "detail": (
+                        "Priorité invalide. Valeurs autorisées "
+                        "pour un signalement : BASSE, NORMALE, HAUTE."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             equipement = Equipement.objects.get(pk=equipement_id)
         except Equipement.DoesNotExist:
             return Response(
-                {
-                    "detail": "L'équipement demandé n'existe pas."
-                },
-                status = status.HTTP_404_NOT_FOUND,
+                {"detail": "L'équipement demandé n'existe pas."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        #la logique métier es centralisé dans le service
-        ticket = PanneService.declarer_panne(
-            equipement=equipement,
-            titre=titre,
-            description=description,
-            type=type_ticket,
-            priorite=priorite,
-        )
+        try:
+            ticket = PanneService.declarer_panne(
+                equipement=equipement,
+                titre=titre,
+                description=description,
+                type=type_ticket,
+                priorite=priorite,
+            )
+        except ValueError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        #Sérialisation du ticket créé
         serializer = self.get_serializer(ticket)
 
         return Response(
             serializer.data,
-            status = status.HTTP_201_CREATED,
+            status=status.HTTP_201_CREATED,
         )
 
     @action(

@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from inventaire.models import Batiment, Etage, Salle, Equipement
+from inventaire.models import Batiment, Etage, Salle, Equipement, Plan, Position
 from inventaire.serializers import EquipementSerializer
 
 
@@ -61,3 +61,85 @@ class EquipementSerializerTest(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("salle", serializer.errors)
+
+    def test_enregistrer_avec_une_salle_cree_une_position(self):
+        """
+        Enregistrer un materiel avec une salle le positionne
+        automatiquement sur le plan de son etage, sans quoi
+        il resterait invisible dans la vue Localisation.
+        """
+
+        Plan.objects.create(
+            etage=self.etage,
+            largeur=1000,
+            hauteur=800,
+        )
+
+        serializer = EquipementSerializer(
+            data={
+                "nom": "PC Nouveau",
+                "type": "ORDINATEUR",
+                "numero_inventaire": "INV-100",
+                "situation": "AFFECTE",
+                "etat": "EN_SERVICE",
+                "salle": self.salle.id,
+            },
+        )
+
+        self.assertTrue(
+            serializer.is_valid(),
+            serializer.errors,
+        )
+
+        equipement = serializer.save()
+
+        position = Position.objects.get(
+            equipement=equipement
+        )
+
+        self.assertEqual(position.x, 500)
+        self.assertEqual(position.y, 400)
+
+    def test_modifier_la_salle_deplace_la_position(self):
+        """
+        Changer de salle deplace le materiel sur le plan
+        de l'etage correspondant.
+        """
+
+        Plan.objects.create(
+            etage=self.etage,
+            largeur=1000,
+            hauteur=800,
+        )
+
+        etage_2 = Etage.objects.create(
+            batiment=self.batiment,
+            numero=2,
+            nom="Premier étage",
+        )
+
+        Plan.objects.create(etage=etage_2)
+
+        salle_2 = Salle.objects.create(
+            etage=etage_2,
+            nom="Salle 201",
+        )
+
+        serializer = EquipementSerializer(
+            instance=self.equipement,
+            data={"salle": salle_2.id},
+            partial=True,
+        )
+
+        self.assertTrue(
+            serializer.is_valid(),
+            serializer.errors,
+        )
+
+        equipement = serializer.save()
+
+        position = Position.objects.get(
+            equipement=equipement
+        )
+
+        self.assertEqual(position.plan.etage, etage_2)

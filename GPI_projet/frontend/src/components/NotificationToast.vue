@@ -1,5 +1,10 @@
 <template>
-    <div class="notification-container">
+    <div
+        class="notification-container"
+        role="region"
+        aria-label="Notifications"
+        aria-live="polite"
+    >
         <transition-group name="notification">
             <div
                 v-for="notification in notifications"
@@ -8,7 +13,10 @@
                 :class="`notification-${notification.type}`"
             >
                 <div class="notification-content">
-                    <span class="notification-icon">
+                    <span
+                        class="notification-icon"
+                        aria-hidden="true"
+                    >
                         {{ getIcon(notification.type) }}
                     </span>
                     <span class="notification-message">
@@ -18,9 +26,10 @@
                 <button
                     type="button"
                     class="notification-close"
+                    aria-label="Fermer la notification"
                     @click="remove(notification.id)"
                 >
-                    ×
+                    <span aria-hidden="true">×</span>
                 </button>
             </div>
         </transition-group>
@@ -45,6 +54,11 @@ function getIcon(type) {
 </script>
 
 <style scoped>
+/*
+    Les notifications utilisent les mêmes jetons de couleur que le
+    reste de l'application. Elles étaient alignées sur la palette
+    Bootstrap par défaut, ce qui les détachait du design system.
+*/
 .notification-container {
     position: fixed;
     top: 20px;
@@ -61,26 +75,32 @@ function getIcon(type) {
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    border-radius: 8px;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
     min-width: 300px;
 }
 
+/*
+    La bordure gauche et l'icône portent le type. Le texte du message
+    reste la source principale : le type n'est jamais porté par la
+    seule couleur.
+*/
 .notification-success {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--success);
 }
 
 .notification-error {
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid var(--danger);
 }
 
 .notification-warning {
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid var(--warning);
 }
 
 .notification-info {
-    border-left: 4px solid #17a2b8;
+    border-left: 4px solid var(--info);
 }
 
 .notification-content {
@@ -96,38 +116,45 @@ function getIcon(type) {
 }
 
 .notification-success .notification-icon {
-    color: #28a745;
+    color: var(--success-text);
 }
 
 .notification-error .notification-icon {
-    color: #dc3545;
+    color: var(--danger-text);
 }
 
 .notification-warning .notification-icon {
-    color: #ffc107;
+    color: var(--warning-text);
 }
 
 .notification-info .notification-icon {
-    color: #17a2b8;
+    color: var(--info-text);
 }
 
 .notification-message {
     font-size: 14px;
-    color: #333;
+    color: var(--text-main);
 }
 
 .notification-close {
     background: none;
     border: none;
     font-size: 20px;
-    color: #999;
+    color: var(--text-light);
     cursor: pointer;
     padding: 0 5px;
     line-height: 1;
 }
 
 .notification-close:hover {
-    color: #333;
+    color: var(--text-main);
+}
+
+/* Cible de focus visible au clavier. */
+.notification-close:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
 }
 
 /* Animation */

@@ -29,8 +29,12 @@ urlpatterns = [
     path("api/audit/", include("audit.urls"),)
 ]
 
+# Développement uniquement : Django sert MEDIA (plans) via runserver.
+# En production (DEBUG=False), configurer le reverse proxy (nginx, etc.)
+# pour exposer MEDIA_ROOT sous MEDIA_URL. Ne pas servir les media par
+# Django en production.
 if settings.DEBUG:
-    urlpatterns += static (
+    urlpatterns += static(
         settings.MEDIA_URL,
-        document_root = settings.MEDIA_ROOT,
+        document_root=settings.MEDIA_ROOT,
     )

@@ -1,348 +1,784 @@
 <template>
-    <div class="tickets-page">
-        <div class="page-header">
+    <div class="page-container tickets-page">
+
+        <!-- En-tête -->
+
+        <div class="page-heading">
             <div>
-                <h1>Tickets</h1>
-                <p>
-                    Gestion des pannes et réclamations
+                <h1 class="page-heading__title">
+                    Signalements
+                </h1>
+
+                <p class="page-heading__subtitle">
+                    Pannes et réclamations déclarées sur le parc
+                    informatique.
                 </p>
             </div>
 
-            <button
-                @click="ouvrirCreation"
-            >
-                Nouveau ticket
-            </button>
-        </div>
-
-        <div
-            v-if="afficherFormulaire"
-            class="ticket-form"
-        >
-            <h2>Nouveau ticket</h2>
-
-            <div class="form-group">
-                <label for="equipement">
-                Équipement
-                </label>
-
-                <select
-                id="equipement"
-                v-model="equipementSelectionne"
-                :disabled="
-                    chargementEquipements ||
-                    creationEnCours
-                "
-                >
-                <option value="">
-                    -- Sélectionner un équipement --
-                </option>
-
-                <option
-                    v-for="equipement in equipements"
-                    :key="equipement.id"
-                    :value="equipement.id"
-                >
-                    {{ equipement.nom }}
-                    -
-                    {{ equipement.numero_inventaire }}
-                </option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="titre">
-                    Titre
-                </label>
-
-                <input
-                    id="titre"
-                    v-model="titre"
-                    type="text"
-                    placeholder="Titre du ticket..."
-                    :disabled="creationEnCours"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="type">
-                    Type
-                </label>
-
-                <select
-                    id="type"
-                    v-model="type"
-                    :disabled="creationEnCours"
-                >
-                    <option value="MAINTENANCE">Maintenance</option>
-                    <option value="RECLAMATION">Réclamation</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="priorite">
-                    Priorité
-                </label>
-
-                <select
-                    id="priorite"
-                    v-model="priorite"
-                    :disabled="creationEnCours"
-                >
-                    <option value="BASSE">Basse</option>
-                    <option value="NORMALE">Normale</option>
-                    <option value="HAUTE">Haute</option>
-                    <option value="CRITIQUE">Critique</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="description">
-                    Description
-                </label>
-
-                <textarea
-                    id="description"
-                    v-model="description"
-                    rows="5"
-                    placeholder="Décrivez la panne ou la réclamation..."
-                    :disabled="creationEnCours"
-        >       </textarea>
-            </div>
-
-            <p
-                v-if="erreurCreation"
-                class="message-error"
-            >
-                {{ erreurCreation }}
-            </p>
-
-            <div class="form-actions">
+            <div class="page-heading__actions">
                 <button
                     type="button"
-                    @click="fermerFormulaire"
-                    :disabled="creationEnCours"
-            >
-                Annuler
-                </button>
-
-                <button
-                type="button"
-                @click="enregistrerTicket"
-                :disabled="creationEnCours"
-            >
-                {{
-                    creationEnCours
-                        ? "Création..."
-                        : "Créer le ticket"
-                }}
+                    class="btn-primary"
+                    @click="ouvrirCreation"
+                >
+                    Nouveau signalement
                 </button>
             </div>
         </div>
 
-        <div v-if="chargement" class="message">
-            Chargement des tickets...
-        </div>
+        <!-- Erreur -->
 
-        <div
-            v-else-if="erreur"
-            class="message message-error"
-        >
-            {{ erreur }}
-        </div>
+        <AppAlert
+            v-if="erreur"
+            type="error"
+            :message="erreur"
+        />
 
-        <div
-            v-else-if="tickets.length === 0"
-            class="message"
-        >
-            Aucun ticket enregistré.
-        </div>
+        <!-- Chargement -->
 
-        <div v-else class="tickets-list">
-            <div
-                v-for="ticket in tickets"
-                :key="ticket.id"
-                class="ticket-card"
+        <LoadingState
+            v-if="chargement"
+            titre="Chargement des signalements…"
+        />
+
+        <template v-else-if="!erreur">
+            <!--
+                Résumé : les compteurs sont dérivés de la liste déjà
+                chargée, à partir des valeurs réellement fournies par
+                l'API. Aucun appel statistique supplémentaire.
+            -->
+
+            <section
+                class="statistiques"
+                aria-label="Situation des signalements"
             >
-                <div class="ticket-header">
-                    <strong>
-                        #{{ ticket.id }} - {{ ticket.titre }}
-                    </strong>
+                <div class="statistique">
+                    <span class="statistique__intitule">
+                        Total
+                    </span>
 
-                    <div class="ticket-meta">
-                        <span
-                            class="statut"
-                            :class="`statut-${ticket.statut.toLowerCase()}`"
-                        >
-                            {{ ticket.statut }}
-                        </span>
-
-                        <span
-                            class="type"
-                            :class="`type-${ticket.type.toLowerCase()}`"
-                        >
-                            {{ ticket.type }}
-                        </span>
-
-                        <span
-                            class="priorite"
-                            :class="`priorite-${ticket.priorite.toLowerCase()}`"
-                        >
-                            {{ ticket.priorite }}
-                        </span>
-                    </div>
+                    <span class="statistique__valeur">
+                        {{ tickets.length }}
+                    </span>
                 </div>
 
-                <div class="ticket-content">
-                    <p>
-                        <strong>Équipement :</strong>
-                        {{ ticket.equipement_nom }}
-                    </p>
+                <div class="statistique">
+                    <span class="statistique__intitule">
+                        Ouverts
+                    </span>
 
-                    <p>
-                        <strong>N° inventaire :</strong>
-                        {{ ticket.numero_inventaire }}
-                    </p>
-
-                    <p>
-                        <strong>Date :</strong>
-                        {{ formaterDate(ticket.date_signalement) }}
-                    </p>
-
-                    <p>
-                        <strong>Description :</strong>
-                        {{ ticket.description }}
-                    </p>
+                    <span class="statistique__valeur">
+                        {{ nombreParStatut.OUVERT || 0 }}
+                    </span>
                 </div>
 
                 <div
-                    v-if="estAdmin"
-                    class="ticket-actions"
+                    class="statistique"
+                    :class="{ 'statistique--alerte': (nombreParStatut.EN_COURS || 0) > 0 }"
                 >
-                    <button
-                        v-if="ticket.statut === 'OUVERT'"
-                        type="button"
-                        @click="prendreEnCharge(ticket)"
-                        :disabled="
-                            priseEnChargeEnCours === ticket.id
-                        "
-                    >
-                        {{
-                            priseEnChargeEnCours === ticket.id
-                                ? "Prise en charge..."
-                                : "Prendre en charge"
-                        }}
-                    </button>
+                    <span class="statistique__intitule">
+                        En cours
+                    </span>
 
-                    <button
-                        v-if="ticket.statut === 'EN_COURS'"
-                        type="button"
-                        @click="ouvrirResolution(ticket)"
-                        :disabled="
-                            resolutionEnCours === ticket.id
-                        "
-                    >
-                        {{
-                            resolutionEnCours === ticket.id
-                                ? "Résolution..."
-                                : "Résoudre"
-                        }}
-                    </button>
+                    <span class="statistique__valeur">
+                        {{ nombreParStatut.EN_COURS || 0 }}
+                    </span>
+                </div>
 
-                    <p
-                        v-if="erreurAction"
-                        class="message-error"
-                    >
-                        {{ erreurAction }}
+                <div class="statistique">
+                    <span class="statistique__intitule">
+                        Résolus
+                    </span>
+
+                    <span class="statistique__valeur">
+                        {{ nombreParStatut.RESOLU || 0 }}
+                    </span>
+                </div>
+
+                <div
+                    v-if="nombreCritiques > 0"
+                    class="statistique statistique--alerte"
+                >
+                    <span class="statistique__intitule">
+                        Priorité critique
+                    </span>
+
+                    <span class="statistique__valeur">
+                        {{ nombreCritiques }}
+                    </span>
+                </div>
+            </section>
+
+            <!-- Recherche et filtres -->
+
+            <Filters
+                :filters="filtres"
+                :initial-filters="filtresActifs"
+                @change="setFilters"
+                @reset="resetFilters"
+            />
+
+            <!-- Aucun signalement -->
+
+            <EmptyState
+                v-if="tickets.length === 0"
+                titre="Aucun signalement enregistré"
+                message="Aucun équipement n'a fait l'objet d'une déclaration de panne ou de réclamation."
+            />
+
+            <!-- Aucun résultat après filtrage -->
+
+            <EmptyState
+                v-else-if="filteredItems.length === 0"
+                titre="Aucun signalement ne correspond"
+                message="Aucun signalement ne correspond aux critères sélectionnés."
+            />
+
+            <!-- Liste -->
+
+            <template v-else>
+                <div class="resultats-barre">
+                    <p class="resultats-compte">
+                        <span class="resultats-compte__valeur">
+                            {{ filteredItems.length }}
+                        </span>
+                        signalement{{ filteredItems.length > 1 ? 's' : '' }}
+                        <template v-if="filteredItems.length < tickets.length">
+                            sur {{ tickets.length }}
+                        </template>
                     </p>
                 </div>
-            </div>
-        </div>
 
-        <!-- Modal de résolution -->
+                <div class="table-scroll">
+                    <table>
+                        <caption class="visually-hidden">
+                            Signalements de panne et de réclamation
+                        </caption>
+
+                        <thead>
+                            <tr>
+                                <th scope="col">N°</th>
+
+                                <TableSort
+                                    column-key="titre"
+                                    label="Titre"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <TableSort
+                                    column-key="equipement_nom"
+                                    label="Équipement"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <TableSort
+                                    column-key="type"
+                                    label="Type"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <TableSort
+                                    column-key="statut"
+                                    label="Statut"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <TableSort
+                                    column-key="priorite"
+                                    label="Priorité"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <TableSort
+                                    column-key="date_signalement"
+                                    label="Déclaré le"
+                                    :current-sort-key="sortKey"
+                                    :current-sort-order="sortOrder"
+                                    @sort="setSort"
+                                />
+
+                                <th scope="col">Résolu le</th>
+
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr
+                                v-for="ticket in paginatedItems"
+                                :key="ticket.id"
+                            >
+                                <td class="cellule-id">
+                                    #{{ ticket.id }}
+                                </td>
+
+                                <td>
+                                    <span class="ticket-titre">
+                                        {{ ticket.titre }}
+                                    </span>
+
+                                    <span class="ticket-equipement">
+                                        N° inventaire
+                                        {{ ticket.numero_inventaire }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    {{ ticket.equipement_nom }}
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="type-signalement"
+                                        :class="`type-${ticket.type.toLowerCase()}`"
+                                    >
+                                        {{ libelleType(ticket.type) }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="statut"
+                                        :class="`statut-${ticket.statut.toLowerCase()}`"
+                                    >
+                                        {{ libelleStatut(ticket.statut) }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="priorite"
+                                        :class="`priorite-${ticket.priorite.toLowerCase()}`"
+                                    >
+                                        {{ libellePriorite(ticket.priorite) }}
+                                    </span>
+                                </td>
+
+                                <td class="cellule-date">
+                                    {{ formaterDate(ticket.date_signalement) }}
+                                </td>
+
+                                <td class="cellule-date">
+                                    {{ formaterDate(ticket.date_resolution) }}
+                                </td>
+
+                                <!--
+                                    Les actions d'administration sont
+                                    présentée dans leur propre colonne :
+                                    consulter, prendre en charge,
+                                    résoudre et qualifier restent
+                                    distincts.
+                                -->
+                                <td>
+                                    <div
+                                        v-if="estAdmin"
+                                        class="actions-cellule"
+                                    >
+                                        <button
+                                            v-if="ticket.statut === 'OUVERT'"
+                                            type="button"
+                                            class="btn-edit btn-sm"
+                                            :disabled="priseEnChargeEnCours === ticket.id"
+                                            @click="prendreEnCharge(ticket)"
+                                        >
+                                            {{
+                                                priseEnChargeEnCours === ticket.id
+                                                    ? 'Prise en charge…'
+                                                    : 'Prendre en charge'
+                                            }}
+                                        </button>
+
+                                        <button
+                                            v-if="ticket.statut === 'EN_COURS'"
+                                            type="button"
+                                            class="btn-primary btn-sm"
+                                            :disabled="resolutionEnCours === ticket.id"
+                                            @click="ouvrirResolution(ticket)"
+                                        >
+                                            {{
+                                                resolutionEnCours === ticket.id
+                                                    ? 'Résolution…'
+                                                    : 'Résoudre'
+                                            }}
+                                        </button>
+
+                                        <button
+                                            v-if="ticket.statut !== 'RESOLU'"
+                                            type="button"
+                                            class="btn-secondary btn-sm"
+                                            :disabled="qualificationEnCours === ticket.id"
+                                            @click="ouvrirQualification(ticket)"
+                                        >
+                                            {{
+                                                qualificationEnCours === ticket.id
+                                                    ? 'Qualification…'
+                                                    : 'Qualifier'
+                                            }}
+                                        </button>
+
+                                        <span
+                                            v-if="ticket.statut === 'RESOLU'"
+                                            class="text-muted"
+                                        >
+                                            Aucune action
+                                        </span>
+                                    </div>
+
+                                    <span
+                                        v-else
+                                        class="text-muted"
+                                    >
+                                        —
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!--
+                    Erreur d'action rattachée au signalement concerné :
+                    elle ne doit pas s'afficher sur les autres lignes.
+                -->
+                <AppAlert
+                    v-if="erreurAction"
+                    type="error"
+                    :message="`Signalement #${ticketEnErreur} — ${erreurAction}`"
+                />
+
+                <Pagination
+                    :current-page="currentPage"
+                    :page-size="pageSize"
+                    :total-items="filteredItems.length"
+                    @change="setPage"
+                    @page-size-change="setPageSize"
+                />
+            </template>
+        </template>
+
+        <!-- Formulaire de création -->
+
+        <section
+            v-if="afficherFormulaire"
+            class="formulaire"
+            aria-labelledby="titre-formulaire-ticket"
+        >
+            <h2
+                id="titre-formulaire-ticket"
+                class="formulaire__titre"
+            >
+                Nouveau signalement
+            </h2>
+
+            <p class="formulaire__legende">
+                Déclarez une panne ou une réclamation sur un équipement
+                affecté.
+            </p>
+
+            <AppAlert
+                v-if="erreurCreation"
+                type="error"
+                :message="erreurCreation"
+            />
+
+            <form @submit.prevent="enregistrerTicket">
+                <div class="formulaire__groupe">
+                    <p class="formulaire__groupe-titre">
+                        Signalement
+                    </p>
+
+                    <div class="form-group">
+                        <label for="ticket-equipement">
+                            Équipement
+                            <span
+                                class="requis"
+                                aria-hidden="true"
+                            >*</span>
+                        </label>
+
+                        <select
+                            id="ticket-equipement"
+                            v-model="equipementSelectionne"
+                            :disabled="chargementEquipements || creationEnCours"
+                        >
+                            <option value="">
+                                Sélectionner un équipement
+                            </option>
+
+                            <option
+                                v-for="equipement in equipements"
+                                :key="equipement.id"
+                                :value="equipement.id"
+                            >
+                                {{ equipement.nom }} — {{ equipement.numero_inventaire }}
+                            </option>
+                        </select>
+
+                        <p class="champ-aide">
+                            Seuls les équipements affectés à une salle
+                            peuvent faire l'objet d'un signalement.
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticket-titre">
+                            Titre
+                            <span
+                                class="requis"
+                                aria-hidden="true"
+                            >*</span>
+                        </label>
+
+                        <input
+                            id="ticket-titre"
+                            v-model="titre"
+                            type="text"
+                            :disabled="creationEnCours"
+                            placeholder="Titre du signalement…"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticket-type">
+                            Nature
+                            <span
+                                class="requis"
+                                aria-hidden="true"
+                            >*</span>
+                        </label>
+
+                        <select
+                            id="ticket-type"
+                            v-model="type"
+                            :disabled="creationEnCours"
+                        >
+                            <option value="MAINTENANCE">Maintenance</option>
+                            <option value="RECLAMATION">Réclamation</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ticket-priorite">
+                            Urgence
+                        </label>
+
+                        <select
+                            id="ticket-priorite"
+                            v-model="priorite"
+                            :disabled="creationEnCours"
+                        >
+                            <option value="BASSE">Basse</option>
+                            <option value="NORMALE">Normale</option>
+                            <option value="HAUTE">Haute</option>
+                        </select>
+
+                        <p class="champ-aide">
+                            La priorité critique ne peut pas être choisie
+                            à la création : elle est réservée à la
+                            qualification d'un ticket déjà enregistré.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="formulaire__groupe">
+                    <p class="formulaire__groupe-titre">
+                        Description
+                    </p>
+
+                    <div class="form-group">
+                        <label for="ticket-description">
+                            Description
+                            <span
+                                class="requis"
+                                aria-hidden="true"
+                            >*</span>
+                        </label>
+
+                        <textarea
+                            id="ticket-description"
+                            v-model="description"
+                            rows="5"
+                            :disabled="creationEnCours"
+                            placeholder="Décrivez la panne ou la réclamation…"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="formulaire__actions">
+                    <button
+                        type="button"
+                        class="btn-secondary"
+                        :disabled="creationEnCours"
+                        @click="fermerFormulaire"
+                    >
+                        Annuler
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                        :disabled="creationEnCours"
+                    >
+                        {{ creationEnCours ? "Création…" : "Créer le signalement" }}
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Modale de résolution -->
+
         <div
             v-if="afficherModalResolution"
             class="modal-overlay"
             @click.self="fermerModalResolution"
         >
-            <div class="modal">
-                <h2>Résoudre le ticket</h2>
+            <div
+                class="modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titre-resolution"
+            >
+                <h2
+                    id="titre-resolution"
+                    class="formulaire__titre"
+                >
+                    Résoudre le signalement
+                </h2>
 
-                <p v-if="ticketEnResolution">
-                    <strong>{{ ticketEnResolution.titre }}</strong>
+                <p
+                    v-if="ticketEnResolution"
+                    class="modal__contexte"
+                >
+                    #{{ ticketEnResolution.id }} — {{ ticketEnResolution.titre }}
                 </p>
 
                 <div class="form-group">
-                    <label for="commentaire">
+                    <label for="ticket-commentaire">
                         Commentaire de résolution
+                        <span
+                            class="requis"
+                            aria-hidden="true"
+                        >*</span>
                     </label>
 
                     <textarea
-                        id="commentaire"
+                        id="ticket-commentaire"
                         v-model="commentaireResolution"
                         rows="5"
-                        placeholder="Décrivez la résolution..."
                         :disabled="resolutionEnCours"
+                        placeholder="Décrivez la résolution…"
                     ></textarea>
                 </div>
 
-                <p
-                    v-if="erreurAction"
-                    class="message-error"
-                >
-                    {{ erreurAction }}
-                </p>
+                <!--
+                    Diagramme d'activité « Matériel réparé ? » :
+                    oui, le matériel est remis en service à la
+                    clôture ; non, il reste hors service.
+                -->
+                <fieldset class="formulaire__groupe">
+                    <legend class="formulaire__groupe-titre">
+                        Matériel réparé ?
+                    </legend>
 
-                <div class="modal-actions">
+                    <label class="choix">
+                        <input
+                            v-model="materielRepare"
+                            type="radio"
+                            :value="true"
+                            :disabled="resolutionEnCours"
+                        >
+                        Oui, remettre le matériel en service
+                    </label>
+
+                    <label class="choix">
+                        <input
+                            v-model="materielRepare"
+                            type="radio"
+                            :value="false"
+                            :disabled="resolutionEnCours"
+                        >
+                        Non, maintenir le matériel hors service
+                    </label>
+                </fieldset>
+
+                <AppAlert
+                    v-if="erreurResolution"
+                    type="error"
+                    :message="erreurResolution"
+                />
+
+                <div class="formulaire__actions">
                     <button
                         type="button"
-                        @click="fermerModalResolution"
+                        class="btn-secondary"
                         :disabled="resolutionEnCours"
+                        @click="fermerModalResolution"
                     >
                         Annuler
                     </button>
 
                     <button
                         type="button"
-                        @click="confirmerResolution"
+                        class="btn-primary"
                         :disabled="resolutionEnCours"
+                        @click="confirmerResolution"
                     >
-                        {{
-                            resolutionEnCours
-                                ? "Résolution..."
-                                : "Résoudre"
-                        }}
+                        {{ resolutionEnCours ? "Résolution…" : "Résoudre" }}
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Modale de qualification -->
+
+        <div
+            v-if="afficherModalQualification"
+            class="modal-overlay"
+            @click.self="fermerModalQualification"
+        >
+            <div
+                class="modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titre-qualification"
+            >
+                <h2
+                    id="titre-qualification"
+                    class="formulaire__titre"
+                >
+                    Qualifier le signalement
+                </h2>
+
+                <p
+                    v-if="ticketEnQualification"
+                    class="modal__contexte"
+                >
+                    #{{ ticketEnQualification.id }} — {{ ticketEnQualification.titre }}
+                </p>
+
+                <p class="formulaire__legende">
+                    La qualification fixe la nature exacte du signalement
+                    et son niveau d'urgence réel.
+                </p>
+
+                <div class="form-group">
+                    <label for="qualification-type">
+                        Nature
+                    </label>
+
+                    <select
+                        id="qualification-type"
+                        v-model="typeQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        <option value="MAINTENANCE">Maintenance</option>
+                        <option value="RECLAMATION">Réclamation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="qualification-priorite">
+                        Priorité
+                    </label>
+
+                    <select
+                        id="qualification-priorite"
+                        v-model="prioriteQualification"
+                        :disabled="qualificationEnCours"
+                    >
+                        <option value="BASSE">Basse</option>
+                        <option value="NORMALE">Normale</option>
+                        <option value="HAUTE">Haute</option>
+                        <option value="CRITIQUE">Critique</option>
+                    </select>
+                </div>
+
+                <AppAlert
+                    v-if="erreurQualification"
+                    type="error"
+                    :message="erreurQualification"
+                />
+
+                <div class="formulaire__actions">
+                    <button
+                        type="button"
+                        class="btn-secondary"
+                        :disabled="qualificationEnCours"
+                        @click="fermerModalQualification"
+                    >
+                        Annuler
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        :disabled="qualificationEnCours"
+                        @click="confirmerQualification"
+                    >
+                        {{ qualificationEnCours ? "Qualification…" : "Qualifier" }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
 <script setup>
-import {
-    ref,
-    computed,
-    onMounted,
-} from "vue";
+/**
+ * Suivi des signalements de panne et de réclamation.
+ *
+ * `TicketPanne` couvre deux natures de déclaration, la panne et la
+ * réclamation. Il ne s'agit pas d'un système général de gestion de
+ * tickets : aucune catégorie, aucun workflow et aucun champ
+ * supplémentaire ne sont introduits ici.
+ *
+ * Les priorités existent bien côté API ; la formulation du formulaire
+ * de création s'en tient aux trois niveaux que l'administration est
+ * censée qualifier, la priorité critique restant son apanage via la
+ * qualification. Le tableau, lui, affiche la valeur réelle.
+ *
+ * Tous les appels d'API sont conservés à l'identique.
+ */
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 import {
-    getTickets, creerTicket, prendreEnChargeTicket, resoudreTicket
+    getTickets,
+    creerTicket,
+    prendreEnChargeTicket,
+    resoudreTicket,
+    qualifierTicket,
 } from "../services/ticketService";
 
-import {
-    getEquipementsDashboard,
-} from "../services/dashboardService";
+import { getEquipementsDashboard } from "../services/dashboardService";
 
 import { useAuthStore } from "../stores/auth";
 import { useNotificationStore } from "../stores/notifications";
+import { useTableData } from "../composables/useTableData";
+
+import AppAlert from "../components/AppAlert.vue";
+import EmptyState from "../components/EmptyState.vue";
+import Filters from "../components/Filters.vue";
+import LoadingState from "../components/LoadingState.vue";
+import Pagination from "../components/Pagination.vue";
+import TableSort from "../components/TableSort.vue";
+
+const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 
 const tickets = ref([]);
 const chargement = ref(false);
 const erreur = ref("");
-
-const authStore = useAuthStore();
-const notificationStore = useNotificationStore();
 
 const afficherFormulaire = ref(false);
 
@@ -360,15 +796,158 @@ const erreurCreation = ref("");
 
 const priseEnChargeEnCours = ref(null);
 const resolutionEnCours = ref(null);
+const qualificationEnCours = ref(null);
+
+/*
+ * Chaque action porte sa propre erreur : une défaillance sur un
+ * signalement ne doit pas être affichée sur tous les autres.
+ */
 const erreurAction = ref("");
+const ticketEnErreur = ref(null);
+const erreurResolution = ref("");
+const erreurQualification = ref("");
 
 const ticketEnResolution = ref(null);
 const commentaireResolution = ref("");
 const afficherModalResolution = ref(false);
 
-const estAdmin = computed(
-    () => authStore.user?.role === "ADMIN"
+// « Materiel repare ? » du diagramme d'activite : par oui, le matériel
+// est remis en service a la cloture.
+const materielRepare = ref(true);
+
+const ticketEnQualification = ref(null);
+const typeQualification = ref("MAINTENANCE");
+const prioriteQualification = ref("NORMALE");
+const afficherModalQualification = ref(false);
+
+const estAdmin = computed(() => authStore.isAdmin);
+
+/*
+ * Compteurs de situation, dérivés de la liste déjà chargée. Le
+ * compteur CRITIQUE compte les signalements de priorité critique, pas
+ * un statut : les deux notions sont comptées séparément.
+ */
+const nombreParStatut = computed(() => {
+    const compte = {};
+
+    tickets.value.forEach((ticket) => {
+        compte[ticket.statut] = (compte[ticket.statut] || 0) + 1;
+    });
+
+    return compte;
+});
+
+const nombreCritiques = computed(
+    () => tickets.value.filter(
+        (ticket) => ticket.priorite === "CRITIQUE"
+    ).length
 );
+
+/*
+ * Les filtres s'appuient sur les champs réellement présents dans la
+ * réponse de l'API.
+ */
+const filtres = [
+    {
+        key: "titre",
+        label: "Recherche",
+        type: "text",
+        placeholder: "Titre du signalement",
+    },
+    {
+        key: "equipement_nom",
+        label: "Équipement",
+        type: "text",
+        placeholder: "Nom de l'équipement",
+    },
+    {
+        key: "type",
+        label: "Nature",
+        type: "select",
+        options: [
+            { value: "MAINTENANCE", label: "Maintenance" },
+            { value: "RECLAMATION", label: "Réclamation" },
+        ],
+    },
+    {
+        key: "statut",
+        label: "Statut",
+        type: "select",
+        options: [
+            { value: "OUVERT", label: "Ouvert" },
+            { value: "EN_COURS", label: "En cours" },
+            { value: "RESOLU", label: "Résolu" },
+            { value: "ANNULE", label: "Annulé" },
+        ],
+    },
+    {
+        key: "priorite",
+        label: "Priorité",
+        type: "select",
+        options: [
+            { value: "BASSE", label: "Basse" },
+            { value: "NORMALE", label: "Normale" },
+            { value: "HAUTE", label: "Haute" },
+            { value: "CRITIQUE", label: "Critique" },
+        ],
+    },
+];
+
+const {
+    currentPage,
+    pageSize,
+    sortKey,
+    sortOrder,
+    filters: filtresActifs,
+    filteredItems,
+    paginatedItems,
+    setPage,
+    setPageSize,
+    setSort,
+    setFilters,
+    resetFilters,
+} = useTableData(tickets, {
+    defaultPageSize: 25,
+    defaultSortKey: "date_signalement",
+    defaultSortOrder: "desc",
+});
+
+/*
+ * Libellés lisibles.
+ *
+ * Ces tables reprennent les choix déclarés par le modèle Django. Une
+ * valeur inconnue reste affichée telle quelle plutôt que masquée.
+ */
+const LIBELLES_TYPE = {
+    MAINTENANCE: "Maintenance",
+    RECLAMATION: "Réclamation",
+};
+
+const LIBELLES_STATUT = {
+    OUVERT: "Ouvert",
+    EN_COURS: "En cours",
+    RESOLU: "Résolu",
+    ANNULE: "Annulé",
+};
+
+const LIBELLES_PRIORITE = {
+    BASSE: "Basse",
+    NORMALE: "Normale",
+    HAUTE: "Haute",
+    CRITIQUE: "Critique",
+};
+
+function libelleType(valeur) {
+    return LIBELLES_TYPE[valeur] || valeur || "—";
+}
+
+function libelleStatut(valeur) {
+    return LIBELLES_STATUT[valeur] || valeur || "—";
+}
+
+function libellePriorite(valeur) {
+    return LIBELLES_PRIORITE[valeur] || valeur || "—";
+}
 
 async function chargerTickets() {
     chargement.value = true;
@@ -411,8 +990,14 @@ async function chargerEquipements() {
             await getEquipementsDashboard();
 
         equipements.value = tousLesEquipements.filter(
+            /*
+             * Un équipement déjà en panne est refusé par l'API
+             * ("Cet équipement est déjà en panne.") : il n'est donc pas
+             * proposé, pour ne pas offrir une action qui échouerait.
+             */
             (equipement) =>
-                equipement.situation === "AFFECTE"
+                equipement.situation === "AFFECTE" &&
+                equipement.etat !== "EN_PANNE"
         );
     } catch (error) {
         console.error(
@@ -462,19 +1047,19 @@ async function enregistrerTicket() {
             priorite.value
         );
 
-        notificationStore.success("Ticket créé avec succès");
+        notificationStore.success("Signalement créé avec succès");
         fermerFormulaire();
 
         await chargerTickets();
     } catch (error) {
         console.error(
-            "Erreur lors de la création du ticket :",
+            "Erreur lors de la création du signalement :",
             error
         );
 
         erreurCreation.value =
             error.response?.data?.detail ||
-            "Impossible de créer le ticket.";
+            "Impossible de créer le signalement.";
         notificationStore.error(erreurCreation.value);
     } finally {
         creationEnCours.value = false;
@@ -495,33 +1080,79 @@ function fermerFormulaire() {
 function ouvrirResolution(ticket) {
     ticketEnResolution.value = ticket;
     commentaireResolution.value = "";
+    materielRepare.value = true;
     afficherModalResolution.value = true;
-    erreurAction.value = "";
+    erreurResolution.value = "";
 }
 
 function fermerModalResolution() {
     afficherModalResolution.value = false;
     ticketEnResolution.value = null;
     commentaireResolution.value = "";
-    erreurAction.value = "";
+    materielRepare.value = true;
+    erreurResolution.value = "";
+}
+
+function ouvrirQualification(ticket) {
+    ticketEnQualification.value = ticket;
+    typeQualification.value = ticket.type;
+    prioriteQualification.value = ticket.priorite;
+    afficherModalQualification.value = true;
+    erreurQualification.value = "";
+}
+
+function fermerModalQualification() {
+    afficherModalQualification.value = false;
+    ticketEnQualification.value = null;
+    erreurQualification.value = "";
+}
+
+async function confirmerQualification() {
+    qualificationEnCours.value = ticketEnQualification.value.id;
+    erreurQualification.value = "";
+
+    try {
+        await qualifierTicket(ticketEnQualification.value.id, {
+            type: typeQualification.value,
+            priorite: prioriteQualification.value,
+        });
+
+        notificationStore.success("Signalement qualifié avec succès");
+        fermerModalQualification();
+        await chargerTickets();
+    } catch (error) {
+        console.error(
+            "Erreur lors de la qualification :",
+            error
+        );
+
+        erreurQualification.value =
+            error.response?.data?.detail ||
+            "Impossible de qualifier le signalement.";
+        notificationStore.error(erreurQualification.value);
+    } finally {
+        qualificationEnCours.value = null;
+    }
 }
 
 async function confirmerResolution() {
     if (!commentaireResolution.value.trim()) {
-        erreurAction.value = "Veuillez saisir un commentaire de résolution.";
+        erreurResolution.value =
+            "Veuillez saisir un commentaire de résolution.";
         return;
     }
 
     resolutionEnCours.value = ticketEnResolution.value.id;
-    erreurAction.value = "";
+    erreurResolution.value = "";
 
     try {
         await resoudreTicket(
             ticketEnResolution.value.id,
-            commentaireResolution.value.trim()
+            commentaireResolution.value.trim(),
+            materielRepare.value ? "EN_SERVICE" : "HORS_SERVICE"
         );
 
-        notificationStore.success("Ticket résolu avec succès");
+        notificationStore.success("Signalement résolu avec succès");
         fermerModalResolution();
         await chargerTickets();
     } catch (error) {
@@ -530,27 +1161,41 @@ async function confirmerResolution() {
             error
         );
 
-        erreurAction.value =
+        erreurResolution.value =
             error.response?.data?.detail ||
-            "Impossible de résoudre le ticket.";
-        notificationStore.error(erreurAction.value);
+            "Impossible de résoudre le signalement.";
+        notificationStore.error(erreurResolution.value);
     } finally {
         resolutionEnCours.value = null;
     }
 }
 
+/*
+ * `date_resolution` n'est renseignée que pour un signalement résolu :
+ * l'absence de date ne doit pas laisser croire à une donnée manquante.
+ */
 function formaterDate(date) {
-    if (!date) return "-";
-    return new Date(date).toLocaleString("fr-FR");
+    if (!date) {
+        return "—";
+    }
+
+    return new Date(date).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 
 async function prendreEnCharge(ticket) {
     priseEnChargeEnCours.value = ticket.id;
     erreurAction.value = "";
+    ticketEnErreur.value = null;
 
     try {
         await prendreEnChargeTicket(ticket.id);
-        notificationStore.success("Ticket pris en charge avec succès");
+        notificationStore.success("Signalement pris en charge");
         await chargerTickets();
     } catch (error) {
         console.error(
@@ -560,7 +1205,8 @@ async function prendreEnCharge(ticket) {
 
         erreurAction.value =
             error.response?.data?.detail ||
-            "Impossible de prendre en charge le ticket.";
+            "Impossible de prendre en charge le signalement.";
+        ticketEnErreur.value = ticket.id;
         notificationStore.error(erreurAction.value);
     } finally {
         priseEnChargeEnCours.value = null;
@@ -569,224 +1215,137 @@ async function prendreEnCharge(ticket) {
 
 onMounted(() => {
     chargerTickets();
+
+    document.addEventListener("keydown", surTouche);
 });
+
+onBeforeUnmount(() => {
+    document.removeEventListener("keydown", surTouche);
+});
+
+/*
+ * Échap ferme la boîte de dialogue ouverte, comme le fait
+ * `ConfirmDialog` ailleurs dans l'application.
+ *
+ * La fermeture est ignorée tant qu'une requête est en cours : la
+ * boîte doit rester visible pour afficher son erreur.
+ */
+function surTouche(event) {
+    if (event.key !== "Escape") {
+        return;
+    }
+
+    if (afficherModalQualification.value && !qualificationEnCours.value) {
+        fermerModalQualification();
+
+        return;
+    }
+
+    if (afficherModalResolution.value && !resolutionEnCours.value) {
+        fermerModalResolution();
+    }
+}
 </script>
 
 <style scoped>
 .tickets-page {
-    padding: 20px;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-}
-
-.page-header h1 {
-    margin: 0;
-}
-
-.page-header p {
-    margin: 5px 0 0;
-    color: #666;
-}
-
-.page-header button {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 6px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-}
-
-.tickets-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
 }
 
-.ticket-card {
-    padding: 18px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+.cellule-id {
+    color: var(--text-light);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
 }
 
-.ticket-header {
+.cellule-date {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.ticket-titre {
+    display: block;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.ticket-equipement {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--text-light);
+    font-size: 0.75rem;
+}
+
+.actions-cellule {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 0.35rem;
 }
 
-.ticket-meta {
+.champ-aide {
+    margin: 0.35rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+.modal__contexte {
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.choix {
     display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.ticket-content p {
-    margin: 7px 0;
-}
-
-.statut {
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.type {
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-    background: #e9ecef;
-}
-
-.type-maintenance {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.type-reclamation {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.priorite {
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.priorite-basse {
-    background: #d4edda;
-    color: #155724;
-}
-
-.priorite-normale {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.priorite-haute {
-    background: #f5c6cb;
-    color: #721c24;
-}
-
-.priorite-critique {
-    background: #d6d8d9;
-    color: #1b1e21;
-}
-
-.message {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-}
-
-.message-error {
-    color: #b00020;
-}
-
-.ticket-actions {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-
-    margin-top: 15px;
-    padding-top: 15px;
-
-    border-top: 1px solid #eee;
-}
-
-.ticket-actions button {
-    padding: 8px 14px;
-
-    border: none;
-    border-radius: 6px;
-
-    background: #2563eb;
-    color: white;
-
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-main);
+    font-size: 0.875rem;
     cursor: pointer;
 }
 
-.ticket-actions button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.choix input {
+    margin-top: 0.2rem;
+    flex-shrink: 0;
 }
 
-/* Modal styles */
+/* Les modales reprennent la boîte du design system. */
 .modal-overlay {
-    position: fixed;
-    inset: 0;
     z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    padding: 1.5rem;
 }
 
 .modal {
-    width: 500px;
-    max-width: 90%;
-    padding: 25px;
-    background: white;
-    border-radius: 10px;
-}
-
-.modal h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.modal-actions button {
-    padding: 10px 16px;
+.formulaire__groupe {
+    margin: 0 0 1rem;
+    padding: 0 0 0.25rem;
     border: none;
-    border-radius: 6px;
-    cursor: pointer;
+    border-bottom: 1px solid var(--border-light);
 }
 
-.modal-actions button:last-child {
-    background: #2563eb;
-    color: white;
+.formulaire__groupe:last-of-type {
+    margin-bottom: 0;
+    border-bottom: none;
 }
 
-.modal-actions button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+@media (max-width: 640px) {
+    .statistiques {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .actions-cellule {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 </style>

@@ -7,6 +7,89 @@ from inventaire.models.plan import Plan
 
 
 class LocalisationService:
+
+    # Dimensions utilisees par PlanViewer lorsque le plan
+    # ne declare ni largeur ni hauteur.
+    LARGEUR_PAR_DEFAUT = 1000
+    HAUTEUR_PAR_DEFAUT = 700
+
+    @staticmethod
+    def _coordonnees_par_defaut(plan: Plan):
+        """
+        Coordonnees du centre du plan.
+
+        Elles servent a placer automatiquement un equipement des qu'une
+        salle lui est attribuee, sans intervention de l'administrateur.
+        """
+        x = (plan.largeur or LocalisationService.LARGEUR_PAR_DEFAUT) / 2
+        y = (plan.hauteur or LocalisationService.HAUTEUR_PAR_DEFAUT) / 2
+
+        return x, y
+
+    @staticmethod
+    @transaction.atomic
+    def positionner_si_affecte(equipement: Equipement):
+        """
+        Garantit qu'un materiel affecte a une salle possede une position
+        sur le plan de l'etage de cette salle.
+
+        Attribuer une salle depuis le formulaire ne creait aucune Position :
+        le materiel restait donc invisible sur le plan. Cette methode est
+        appelee apres chaque creation ou modification d'equipement.
+
+        Retourne la position retenue, ou None si le materiel ne peut pas
+        etre positionne (hors stock, sans salle, etage sans plan).
+        """
+
+        # Un materiel en stock n'a pas de place sur le plan :
+        # une position residuelle le ferait apparaitre a tort.
+        if equipement.situation != "AFFECTE":
+            Position.objects.filter(
+                equipement=equipement
+            ).delete()
+
+            return None
+
+        # Sans salle, il n'y a rien a localiser : une eventuelle position
+        # existante deviendrait incoherente.
+        if equipement.salle is None:
+            Position.objects.filter(
+                equipement=equipement
+            ).delete()
+
+            return None
+
+        # Un etage n'a qu'un seul plan (OneToOne).
+        plan = Plan.objects.filter(
+            etage_id=equipement.salle.etage_id
+        ).first()
+
+        if plan is None:
+            Position.objects.filter(
+                equipement=equipement
+            ).delete()
+
+            return None
+
+        position = Position.objects.filter(
+            equipement=equipement
+        ).first()
+
+        # L'emplacement saisi par l'administrateur est conserve :
+        # on ne repositionne que si le plan a change d'etage.
+        if position is not None and position.plan_id == plan.id:
+            return position
+
+        x, y = LocalisationService._coordonnees_par_defaut(plan)
+
+        return LocalisationService.localiser_equipement(
+            equipement=equipement,
+            salle=equipement.salle,
+            plan=plan,
+            x=x,
+            y=y,
+        )
+
     @staticmethod
     def _valider_localisation(
         equipement: Equipement,

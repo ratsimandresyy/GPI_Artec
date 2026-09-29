@@ -218,13 +218,15 @@ async function enregistrer() {
             last_name: formulaire.value.last_name
         });
 
-        // Mettre à jour le store auth
-        if (authStore.user) {
-            authStore.user.email = formulaire.value.email;
-            authStore.user.first_name = formulaire.value.first_name;
-            authStore.user.last_name = formulaire.value.last_name;
-            localStorage.setItem('user', JSON.stringify(authStore.user));
-        }
+        /*
+         * La mise à jour de la session passe par le store : il reste
+         * le seul point d'écriture de l'état de connexion.
+         */
+        authStore.mettreAJourUtilisateur({
+            email: formulaire.value.email,
+            first_name: formulaire.value.first_name,
+            last_name: formulaire.value.last_name
+        });
 
         errorMessageFormulaire.value = '';
     } catch (error) {
@@ -294,7 +296,7 @@ onMounted(() => {
 
 .page-header p {
     margin: 5px 0 0;
-    color: #666;
+    color: var(--text-muted);
 }
 
 .profile-container {
@@ -307,7 +309,7 @@ onMounted(() => {
 .password-card {
     padding: 25px;
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     border-radius: 10px;
 }
 
@@ -330,7 +332,7 @@ onMounted(() => {
 .form-group input {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-medium);
     border-radius: 6px;
     box-sizing: border-box;
 }
@@ -338,7 +340,7 @@ onMounted(() => {
 .form-group small {
     display: block;
     margin-top: 5px;
-    color: #666;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
@@ -350,8 +352,8 @@ onMounted(() => {
     padding: 10px 16px;
     border: none;
     border-radius: 6px;
-    background: #222;
-    color: white;
+    background: var(--primary);
+    color: var(--on-primary);
     cursor: pointer;
 }
 
@@ -361,12 +363,12 @@ onMounted(() => {
 }
 
 .error {
-    color: #b00020;
+    color: var(--danger-text);
     margin-top: 10px;
 }
 
 .success {
-    color: #16803c;
+    color: var(--success-text);
     margin-top: 10px;
 }
 </style>

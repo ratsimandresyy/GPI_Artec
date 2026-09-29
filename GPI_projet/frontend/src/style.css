@@ -1,296 +1,1252 @@
+/* ==========================================================================
+   GPI - Global Design System & Variables
+
+   Identité visuelle : GPI / ARTEC
+   --------------------------------------------------------------------------
+   Le bleu institutionnel est la couleur dominante (structure, navigation,
+   actions principales). Le vert est un accent, jamais un aplat.
+
+   Les couleurs métier restent sémantiques et indépendantes de l'identité :
+   une panne reste rouge, une maintenance reste ambre, un hors service reste
+   gris, quel que soit le thème. Un statut n'est jamais signalé par la
+   couleur seule : texte et forme l'accompagnent toujours.
+   ========================================================================== */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* --- Couleur institutionnelle : bleu marine --- */
+  --primary: #0b4a8f;
+  --primary-hover: #08386e;
+  --primary-deep: #062b54;
+  --primary-light: #eaf1f9;
+  --primary-light-hover: #d7e4f3;
+  --primary-focus: rgba(11, 74, 143, 0.25);
+  --primary-border: rgba(11, 74, 143, 0.22);
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Texte posé sur un aplat bleu institutionnel. */
+  --on-primary: #ffffff;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* --- Accent : vert institutionnel ---
+     Utilisé pour les actions positives et les accents visuels.
+     Volontairement proche de la famille --success sans en être le
+     doublon : --success porte le sens « en service / validé ». */
+  --accent: #0e7a4a;
+  --accent-hover: #0a5f3a;
+  --accent-light: #e6f4ed;
+  --accent-border: rgba(14, 122, 74, 0.22);
+  --on-accent: #ffffff;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* --- Neutre structurel (hors service, éléments neutres) --- */
+  --secondary: #475569;
+  --secondary-hover: #334155;
+  --secondary-light: #f1f5f9;
+
+  /* --- Couleurs métier (sémantiques, non thématiques) --- */
+  --success: #15803d;
+  --success-light: #e4f3ea;
+  --success-text: #0f6b34;
+  --success-border: rgba(21, 128, 61, 0.22);
+
+  --warning: #d97706;
+  --warning-light: #fdf2dc;
+  --warning-text: #92400e;
+  --warning-border: rgba(217, 119, 6, 0.3);
+
+  --danger: #c81e1e;
+  --danger-hover: #a51616;
+  --danger-light: #fce9e9;
+  --danger-text: #a51616;
+  --danger-border: rgba(200, 30, 30, 0.25);
+  --on-danger: #ffffff;
+
+  --info: #0b6fa4;
+  --info-light: #e5f1f8;
+  --info-text: #08557e;
+  --info-border: rgba(11, 111, 164, 0.25);
+
+  /*
+    Situation « en stock ».
+    Teinte volontairement distincte de la famille `etat-*` : la
+    situation décrit où se trouve le matériel, pas son état. Elle ne
+    doit pas être confondue avec un « en service ».
+  */
+  --stock-light: #f3e8ff;
+  --stock-text: #6b21a8;
+  --stock-border: rgba(168, 85, 247, 0.25);
+
+  /* Neutres */
+  --text-main: #0f172a;
+  --text-muted: #5a6a80;
+  --text-light: #94a3b8;
+
+  --bg-page: #f6f8fb;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
+
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Layout */
+  --sidebar-width: 250px;
+  --navbar-height: 64px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* ==========================================================================
+   Base & Resets
+   ========================================================================== */
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-#center {
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-main);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main);
+  font-weight: 700;
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-muted);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+/* ==========================================================================
+   Buttons (Harmonized)
+   ========================================================================== */
+
+button,
+.primary-button,
+.secondary-button,
+.danger-button,
+.btn-primary,
+.btn-secondary,
+.btn-edit,
+.btn-delete,
+.btn-view,
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+}
+
+button:disabled,
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Primary Button */
+button:not([class]),
+.primary-button,
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+button:not([class]):hover:not(:disabled),
+.primary-button:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Secondary Button */
+.secondary-button,
+.btn-secondary,
+.btn-view,
+.btn-refresh {
+  background-color: var(--bg-surface);
+  color: var(--secondary);
+  border-color: var(--border-medium);
+}
+/* ==========================================================================
+   Form Controls
+   ========================================================================== */
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.4rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.6rem 0.85rem;
+  color: var(--text-main);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-focus);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: var(--bg-subtle);
+  color: var(--text-light);
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Badges (États & Situations - Harmonized)
+   ========================================================================== */
+
+.badge,
+.badge-etat,
+[class^="etat-"],
+[class^="situation-"],
+.badge-service,
+.badge-panne,
+.badge-maintenance,
+.badge-hs {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* État : EN_SERVICE */
+.etat-en_service,
+.badge-service {
+  background-color: var(--success-light);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+}
+
+/* État : EN_PANNE */
+.etat-en_panne,
+.badge-panne {
+  background-color: var(--danger-light);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+}
+
+/* État : EN_MAINTENANCE */
+.etat-en_maintenance,
+.badge-maintenance {
+  background-color: var(--warning-light);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-border);
+}
+
+/* État : HORS_SERVICE */
+.etat-hors_service,
+.badge-hs {
+  background-color: var(--bg-subtle);
+  color: var(--secondary);
+  border: 1px solid var(--border-medium);
+}
+
+/* Situation : AFFECTE */
+.situation-affecte {
+  background-color: var(--info-light);
+  color: var(--info-text);
+  border: 1px solid var(--info-border);
+}
+
+/* Situation : EN_STOCK */
+.situation-en_stock {
+  background-color: var(--stock-light);
+  color: var(--stock-text);
+  border: 1px solid var(--stock-border);
+}
+
+/* ==========================================================================
+   État et situation : deux notions, deux familles visuelles
+   --------------------------------------------------------------------------
+   `etat` décrit l'état physique ou fonctionnel du matériel, `situation`
+   décrit sa place dans le parc. Les deux sont affichés côte à côte :
+   les distinguer par la seule couleur serait ambigu.
+
+   L'état garde la forme pilule de la base ; la situation passe en
+   badge anguleux précédé d'un point. Le libellé reste toujours présent
+   en texte : la forme et la couleur ne portent jamais seules
+   l'information.
+   ========================================================================== */
+
+.badge-situation {
+  border-radius: var(--radius-sm);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  padding-left: 0.5rem;
+}
+
+.badge-situation::before {
+  content: '';
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background-color: currentColor;
+  vertical-align: baseline;
+}
+
+/* Valeur absente : ni l'état ni la situation ne doivent laisser croire
+   à une information renseignée. */
+.badge-vide {
+  background-color: var(--bg-subtle);
+  color: var(--text-light);
+  border: 1px dashed var(--border-medium);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ==========================================================================
+   Signalements : statut, type et priorité
+   --------------------------------------------------------------------------
+   Trois notions distinctes, donc trois formes distinctes. Aucune n'est
+   portée par la seule couleur :
+
+   - statut   : pilule précédée d'un point ;
+   - type     : pastille pleine ou_POINTILLE selon la nature du
+                signalement ;
+   - priorité : pastille précédée d'une barre de niveau dont la longueur
+                encode l'urgence, la couleur ne faisant que renforcer.
+
+   Les libellés restent toujours présents en texte.
+   ========================================================================== */
+
+.statut,
+.type-signalement,
+.priorite {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* Statut */
+
+.statut::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.statut-ouvert {
+  background-color: var(--info-light);
+  color: var(--info-text);
+  border-color: var(--info-border);
+}
+
+.statut-en_cours {
+  background-color: var(--warning-light);
+  color: var(--warning-text);
+  border-color: var(--warning-border);
+}
+
+.statut-resolu {
+  background-color: var(--success-light);
+  color: var(--success-text);
+  border-color: var(--success-border);
+}
+
+.statut-annule {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  border-color: var(--border-medium);
+}
+
+/* Type de signalement */
+
+.type-maintenance {
+  background-color: var(--bg-surface);
+  color: var(--secondary);
+  border-color: var(--border-medium);
+}
+
+.type-reclamation {
+  background-color: var(--bg-surface);
+  color: var(--secondary);
+  border-style: dashed;
+  border-color: var(--text-light);
+}
+
+/* Priorité : la barre encode le niveau, la couleur le confirme */
+
+.priorite::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0.7rem;
+  height: 0.3rem;
+  border-radius: 1px;
+  background-color: currentColor;
+}
+
+.priorite-basse::before {
+  width: 0.25rem;
+  opacity: 0.55;
+}
+
+.priorite-normale::before {
+  width: 0.5rem;
+  opacity: 0.75;
+}
+
+.priorite-haute::before {
+  width: 0.7rem;
+}
+
+.priorite-critique::before {
+  width: 0.9rem;
+}
+
+.priorite-basse {
+  background-color: var(--bg-subtle);
+  color: var(--secondary);
+  border-color: var(--border-medium);
+}
+
+.priorite-normale {
+  background-color: var(--info-light);
+  color: var(--info-text);
+  border-color: var(--info-border);
+}
+
+.priorite-haute {
+  background-color: var(--warning-light);
+  color: var(--warning-text);
+  border-color: var(--warning-border);
+}
+
+/*
+ * La priorité critique est la plus urgente : elle reçoit la couleur
+ * d'alerte, jamais une teinte neutre qui la ferait passer pour la
+ * plus faible.
+ */
+.priorite-critique {
+  background-color: var(--danger-light);
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+
+/* ==========================================================================
+   Tuiles de résumé
+   Compteurs de situation, calculés à partir des données déjà
+   chargées : aucun appel supplémentaire n'est nécessaire.
+   ========================================================================== */
+
+.statistiques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.statistique {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-#next-steps {
+.statistique__intitule {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.statistique__valeur {
+  color: var(--text-main);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistique__detail {
+  color: var(--text-light);
+  font-size: 0.75rem;
+}
+
+/* Une tuile peut porter une barre de niveau : maintenance, urgence. */
+.statistique--alerte {
+  border-color: var(--warning-border);
+  background-color: var(--warning-light);
+}
+
+.statistique--alerte .statistique__valeur,
+.statistique--alerte .statistique__intitule {
+  color: var(--warning-text);
+}
+
+/* ==========================================================================
+   Barre de résultats
+   Compte des résultats et rappel des filtres actifs, au-dessus du
+   tableau. Elle répond à « qu'est-ce que je regarde ? ».
+   ========================================================================== */
+
+.resultats-barre {
   display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
 
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
+.resultats-compte {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.resultats-compte__valeur {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.resultats-rappel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.resultats-rappel__intitule {
+  color: var(--text-light);
+}
+
+.marque-filtre {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.marque-filtre__cle {
+  color: var(--text-muted);
+}
+
+.marque-filtre__valeur {
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Grille de cartes
+   Partagée par les listes de bâtiments, d'étages et de salles.
+   ========================================================================== */
+
+.grille-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.carte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.carte:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-md);
+}
+
+.carte__entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.carte__titre {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-main);
+}
+
+.carte__meta {
+  flex-shrink: 0;
+  color: var(--text-light);
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+}
+
+.carte__description {
+  flex: 1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.carte__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.carte__actions > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .grille-cartes {
+    grid-template-columns: 1fr;
   }
 
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
+  .carte__actions {
     flex-direction: column;
-    text-align: center;
   }
 }
 
-#docs {
-  border-right: 1px solid var(--border);
+/* ==========================================================================
+   Formulaires d'administration
+   Présentation commune : groupes logiques, champs obligatoires
+   signalés, erreurs rattachées au champ concerné.
+   ========================================================================== */
 
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+.formulaire {
+  padding: 1.15rem 1.25rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
+.formulaire__titre {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.formulaire__legende {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.formulaire__groupe {
+  padding: 0 0 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.formulaire__groupe:last-of-type {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.formulaire__groupe-titre {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.formulaire__actions {
   display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
 
-  .logo {
-    height: 18px;
+/* Champ obligatoire : signal explicite, pas seulement `required`. */
+.requis {
+  margin-left: 0.2rem;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.champ-obligatoire-note {
+  margin: 0 0 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.champ-erreur {
+  margin: 0.35rem 0 0;
+  color: var(--danger-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.champ-obligatoire {
+  border-color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .formulaire__actions {
+    flex-direction: column-reverse;
   }
 
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
+  .formulaire__actions > * {
+    width: 100%;
   }
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+/* ==========================================================================
+   Standard Page Layout, Tables & Modals
+   ========================================================================== */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.ticks {
-  position: relative;
+.page-header h1 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.page-header p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Cards & Containers */
+.card,
+.dashboard-card,
+.batiment-card,
+.salle-card,
+.etage-card,
+.stock-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover,
+.dashboard-card:hover,
+.batiment-card:hover,
+.salle-card:hover,
+.etage-card:hover,
+.stock-card:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-md);
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.modal,
+.modal-content,
+.form-container {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 600px;
   width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.75rem;
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+th {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+td {
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: var(--bg-subtle);
+}
+
+
+.secondary-button:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled),
+.btn-view:hover:not(:disabled),
+.btn-refresh:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+/* Edit Button */
+.btn-edit {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+
+.btn-edit:hover:not(:disabled) {
+  background-color: var(--primary-light-hover);
+}
+
+/* Danger Button */
+.danger-button,
+.btn-delete,
+.action-button.danger {
+  background-color: var(--danger);
+  color: var(--on-danger);
+  border-color: var(--danger);
+}
+
+.danger-button:hover:not(:disabled),
+.btn-delete:hover:not(:disabled),
+.action-button.danger:hover:not(:disabled) {
+  background-color: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+/* ==========================================================================
+   Focus clavier (accessibilité)
+   Un focus visible est indispensable : la navigation doit rester
+   utilisable au clavier.
+   ========================================================================== */
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* On ne masque le contour que pour les interactions à la souris. */
+:where(a, button, input, select, textarea, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   Boutons — variantes complémentaires
+   ========================================================================== */
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--secondary);
+  border-color: var(--border-medium);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.btn-sm {
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.7rem;
+  line-height: 1.1rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ==========================================================================
+   États d'interface : chargement, vide, erreur
+   Ces classes alimentent les composants AppState.
+   ========================================================================== */
+
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+}
+
+.state-block__icon {
+  color: var(--text-light);
+  line-height: 1;
+}
+
+.state-block__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.state-block__text {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Spinner de chargement */
+.spinner {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid var(--border-medium);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: gpi-spin 0.7s linear infinite;
+}
+
+@keyframes gpi-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
+
+/* Les animations doivent rester supportables pour l'utilisateur. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Alertes
+   ========================================================================== */
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.alert__icon {
+  flex-shrink: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.alert__body {
+  flex: 1;
+}
+
+.alert--info {
+  background-color: var(--info-light);
+  color: var(--info-text);
+  border-color: var(--info-border);
+}
+
+.alert--success {
+  background-color: var(--success-light);
+  color: var(--success-text);
+  border-color: var(--success-border);
+}
+
+.alert--warning {
+  background-color: var(--warning-light);
+  color: var(--warning-text);
+  border-color: var(--warning-border);
+}
+
+.alert--error {
+  background-color: var(--danger-light);
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+
+/* ==========================================================================
+   Conteneur de page
+   Le layout (PublicLayout / MainLayout) porte les marges extérieures ;
+   la page ne porte que la largeur maximale. Cela évite le cumul
+   layout + page + carte, source d'un gutter trop important.
+   ========================================================================== */
+
+.page-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   En-tête de page commun
+   ========================================================================== */
+
+.page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.page-heading__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.page-heading__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.925rem;
+}
+
+.page-heading__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-heading__actions {
+    width: 100%;
+  }
+
+  .page-heading__actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .page-heading__title {
+    font-size: 1.3rem;
+  }
+}
+
+/* ==========================================================================
+   Utilitaires de mise en page
+   ========================================================================== */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   Tables : lisibilité sur petit écran
+   ========================================================================== */
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  th,
+  td {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
+

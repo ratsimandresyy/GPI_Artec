@@ -56,12 +56,42 @@ export async function prendreEnChargeTicket(ticketId) {
 
 /**
  * Résout un ticket.
+ *
+ * `etatFinal` traduit le diagnostic de fin d'intervention
+ * (diagramme d'activité « Matériel réparé ? ») : "EN_SERVICE" si le
+ * matériel est remis en service, "HORS_SERVICE" sinon.
  */
-export async function resoudreTicket(ticketId, commentaireResolution) {
+export async function resoudreTicket(
+    ticketId,
+    commentaireResolution,
+    etatFinal = "EN_SERVICE"
+) {
     const response = await api.post(
         `/inventaire/tickets-panne/${ticketId}/resoudre/`,
         {
             commentaire_resolution: commentaireResolution,
+            etat_final: etatFinal,
+        }
+    );
+
+    return response.data;
+}
+
+/**
+ * Qualifie un ticket : type et/ou priorité.
+ *
+ * Diagramme d'activité « Qualifier le ticket : définir le type,
+ * définir la priorité ». Les valeurs non fournies restent inchangées.
+ */
+export async function qualifierTicket(
+    ticketId,
+    { type = null, priorite = null } = {}
+) {
+    const response = await api.post(
+        `/inventaire/tickets-panne/${ticketId}/qualifier/`,
+        {
+            type,
+            priorite,
         }
     );
 
