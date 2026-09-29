@@ -1,196 +1,288 @@
 <template>
-    <div class="dashboard-public">
-        <header class="dashboard-header">
-            <div class="header-content">
-                <h1>GPI - Système de Gestion du Parc Informatique</h1>
-                <p>Interface visiteur</p>
-            </div>
-            <button class="login-button" @click="allerVersLogin">
-                Connexion Administrateur
-            </button>
-        </header>
+    <div class="page-container accueil-public">
 
-        <div class="dashboard-content">
-            <div class="welcome-section">
-                <h2>Bienvenue sur le système GPI</h2>
-                <p>Consultez les équipements, le plan graphique et signalez des problèmes.</p>
-            </div>
+        <section class="accueil-hero">
+            <h1>
+                Gestion et localisation des actifs informatiques
+            </h1>
 
-            <div class="cards-grid">
-                <div class="dashboard-card" @click="allerVersSignalement">
-                    <div class="card-icon">🎫</div>
-                    <h3>Signaler un problème</h3>
-                    <p>Créez un ticket de panne pour un équipement</p>
-                </div>
+            <p class="accueil-hero__lead">
+                GPIcentralise l'inventaire du parc informatique et sa
+                localisation dans les bâtiments. En tant que visiteur, vous
+                pouvez consulter ces informations et signaler un problème.
+            </p>
+        </section>
 
-                <div class="dashboard-card" @click="allerVersPlan">
-                    <div class="card-icon">🗺️</div>
-                    <h3>Plan graphique</h3>
-                    <p>Visualisez la localisation des équipements</p>
-                </div>
+        <section
+            class="accueil-section"
+            aria-labelledby="titre-fonctions"
+        >
+            <h2
+                id="titre-fonctions"
+                class="accueil-section__titre"
+            >
+                Accès rapides
+            </h2>
 
-                <div class="dashboard-card" @click="allerVersEquipements">
-                    <div class="card-icon">💻</div>
-                    <h3>Équipements</h3>
-                    <p>Consultez la liste du parc informatique</p>
-                </div>
-            </div>
+            <ul class="accueil-grille">
+                <li
+                    v-for="entree in entrees"
+                    :key="entree.to"
+                >
+                    <router-link
+                        :to="entree.to"
+                        class="accueil-carte"
+                    >
+                        <span
+                            class="accueil-carte__icone"
+                            aria-hidden="true"
+                            v-html="entree.icone"
+                        />
 
-            <div class="info-section">
-                <h3>Informations</h3>
+                        <span class="accueil-carte__corps">
+                            <span class="accueil-carte__titre">
+                                {{ entree.titre }}
+                            </span>
+
+                            <span class="accueil-carte__texte">
+                                {{ entree.texte }}
+                            </span>
+                        </span>
+                    </router-link>
+                </li>
+            </ul>
+        </section>
+
+        <section
+            class="accueil-section"
+            aria-labelledby="titre-informations"
+        >
+            <h2
+                id="titre-informations"
+                class="accueil-section__titre"
+            >
+                Mode visiteur
+            </h2>
+
+            <div class="accueil-informations">
                 <ul>
-                    <li>En tant que visiteur, vous pouvez consulter les équipements et le plan en lecture seule</li>
-                    <li>Vous pouvez signaler des problèmes via le formulaire de tickets</li>
-                    <li>Pour gérer le parc informatique, connectez-vous en tant qu'administrateur</li>
+                    <li>
+                        Consultation des équipements, de leur
+                        localisation, des bâtiments, des étages et des
+                        plans, en lecture seule.
+                    </li>
+                    <li>
+                        Création d'un signalement pour une panne ou une
+                        réclamation.
+                    </li>
+                    <li>
+                        Aucune modification du parc : l'administration,
+                        la gestion du stock et le traitement des
+                        signalements sont réservés à l'administrateur.
+                    </li>
                 </ul>
+
+                <p class="accueil-informations__action">
+                    <router-link
+                        to="/login"
+                        class="btn-primary"
+                    >
+                        Connexion administrateur
+                    </router-link>
+                </p>
             </div>
-        </div>
+        </section>
+
     </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-function allerVersLogin() {
-    router.push('/login');
-}
-
-function allerVersSignalement() {
-    router.push('/signaler');
-}
-
-function allerVersPlan() {
-    router.push('/plan');
-}
-
-function allerVersEquipements() {
-    router.push('/equipements');
-}
+/**
+ * Accueil public (mode visiteur).
+ *
+ * Les données proviennent exclusivement des fonctionnalités
+ * réellement exposées par l'API publique. Aucune statistique n'est
+ * calculée ni inventée ici.
+ */
+const entrees = [
+    {
+        to: "/equipements",
+        titre: "Équipements",
+        texte:
+            "Consultez les matériels du parc et leur numéro d'inventaire.",
+        icone:
+            '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" ' +
+            'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+            'stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" ' +
+            'rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+    },
+    {
+        to: "/plan",
+        titre: "Plans et localisation",
+        texte:
+            "Visualisez la position des équipements sur le plan de chaque étage.",
+        icone:
+            '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" ' +
+            'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+            'stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/>' +
+            '<path d="M9 3v15M15 6v15"/></svg>',
+    },
+    {
+        to: "/signaler",
+        titre: "Signaler un problème",
+        texte:
+            "Déclarez une panne ou une réclamation sur un équipement.",
+        icone:
+            '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" ' +
+            'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+            'stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/>' +
+            '<path d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>',
+    },
+];
 </script>
 
 <style scoped>
-.dashboard-public {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.dashboard-header {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 20px 40px;
+.accueil-public {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    gap: 2rem;
 }
 
-.header-content h1 {
+/* --- Bandeau --- */
+
+.accueil-hero {
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.accueil-hero h1 {
+    max-width: 22ch;
+    margin-bottom: 0.6rem;
+    font-size: 1.85rem;
+    line-height: 1.2;
+}
+
+.accueil-hero__lead {
+    max-width: 62ch;
     margin: 0;
-    font-size: 24px;
-    color: #333;
+    font-size: 1.05rem;
 }
 
-.header-content p {
-    margin: 5px 0 0;
-    color: #666;
-    font-size: 14px;
+/* --- Sections --- */
+
+.accueil-section {
+    margin-top: 0;
 }
 
-.login-button {
-    padding: 12px 24px;
-    background: #333;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.3s;
+.accueil-section__title {
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
-.login-button:hover {
-    background: #555;
-}
+/* --- Grille de cartes --- */
 
-.dashboard-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.welcome-section {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
-.welcome-section h2 {
-    margin: 0 0 10px;
-    color: #333;
-}
-
-.welcome-section p {
-    margin: 0;
-    color: #666;
-}
-
-.cards-grid {
+.accueil-grille {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.dashboard-card {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    text-align: center;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.card-icon {
-    font-size: 48px;
-    margin-bottom: 15px;
-}
-
-.dashboard-card h3 {
-    margin: 0 0 10px;
-    color: #333;
-}
-
-.dashboard-card p {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    list-style: none;
     margin: 0;
-    color: #666;
-    font-size: 14px;
+    padding: 0;
 }
 
-.info-section {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 12px;
+.accueil-carte {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    height: 100%;
+    padding: 1.1rem 1.15rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    color: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.info-section h3 {
-    margin: 0 0 15px;
-    color: #333;
+.accueil-carte:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    color: inherit;
 }
 
-.info-section ul {
+.accueil-carte__icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: var(--radius-md);
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.accueil-carte__corps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.accueil-carte__titre {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.accueil-carte__texte {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* --- Informations --- */
+
+.accueil-informations {
+    padding: 1.25rem 1.35rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+}
+
+.accueil-informations ul {
+    margin: 0 0 1.1rem;
+    padding-left: 1.15rem;
+    color: var(--text-muted);
+}
+
+.accueil-informations li {
+    margin-bottom: 0.5rem;
+}
+
+.accueil-informations p {
     margin: 0;
-    padding-left: 20px;
-    color: #666;
 }
 
-.info-section li {
-    margin-bottom: 10px;
+.accueil-informations__action {
+    margin: 1.1rem 0 0;
+}
+
+.accueil-informations p {
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    .accueil-public {
+        padding: 0;
+    }
+
+    .accueil-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .accueil-hero__lead {
+        font-size: 1rem;
+    }
 }
 </style>
