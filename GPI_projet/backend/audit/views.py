@@ -1,17 +1,21 @@
 from rest_framework import viewsets
-from accounts.permissions import IsAdministrateurOrReadOnly
 
-from .models import RapportAudit, ConnexionAudit
-from .serializers import RapportAuditSerializer, ConnexionAuditSerializer
+from accounts.permissions import IsAdministrateur
 
-# Create your views here.
+from .models import ConnexionAudit, RapportAudit
+from .serializers import ConnexionAuditSerializer, RapportAuditSerializer
+
 
 class RapportAuditViewSet(viewsets.ModelViewSet):
     queryset = RapportAudit.objects.select_related("equipement").all()
     serializer_class = RapportAuditSerializer
-    permission_classes = [IsAdministrateurOrReadOnly]
+    permission_classes = [IsAdministrateur]
+
 
 class ConnexionAuditViewSet(viewsets.ModelViewSet):
-    queryset = ConnexionAudit.objects.select_related("equipement, utilisateur").all()
+    queryset = ConnexionAudit.objects.select_related(
+        "equipement",
+        "utilisateur",
+    ).all()
     serializer_class = ConnexionAuditSerializer
-    permission_classes = [IsAdministrateurOrReadOnly]
+    permission_classes = [IsAdministrateur]

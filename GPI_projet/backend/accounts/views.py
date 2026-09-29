@@ -1,48 +1,59 @@
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import LoginSerializer
-
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from accounts.models import User;
-from accounts.permissions import IsAdministrateurOrReadOnly, IsUserOrAdministrateur;
-from .serializers import UserSerializer;
-# Create your views here.
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from accounts.models import User
+from accounts.permissions import IsAdministrateur
+from accounts.throttles import LoginRateThrottle
+
+from .serializers import (
+    LoginSerializer,
+    UserCreateSerializer,
+    UserSerializer,
+)
+
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdministrateurOrReadOnly]
+    permission_classes = [IsAdministrateur]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return UserCreateSerializer
+        return UserSerializer
 
     def get_permissions(self):
         if self.action == "me":
-            permission_classes = [IsUserOrAdministrateur]
-        else:
-            permission_classes = [IsAdministrateurOrReadOnly]
-        return [permission() for permission in permission_classes]
+            return [IsAuthenticated()]
+        return [IsAdministrateur()]
 
     @action(
         detail=False,
         methods=["get", "put"],
-        url_path="me"
+        url_path="me",
     )
     def me(self, request):
         """
-        Permet à l'utilisateur connecté de consulter et modifier son propre profil.
+        Profil de l'utilisateur authentifié uniquement.
         """
         if request.method == "GET":
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
 
-        elif request.method == "PUT":
-            serializer = self.get_serializer(
-                request.user,
-                data=request.data,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
+        serializer = self.get_serializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

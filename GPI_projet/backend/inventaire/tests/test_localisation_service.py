@@ -260,3 +260,187 @@ class LocalisationServiceTest(TestCase):
                 equipement=self.equipement
             ).exists()
         )
+
+
+class PositionnementAutomatiqueTest(TestCase):
+    """
+    Le positionnement automatique declenche par l'attribution
+    d'une salle (EquipementSerializer.create / update).
+    """
+
+    def setUp(self):
+        self.batiment = Batiment.objects.create(
+            nom="Bâtiment A"
+        )
+
+        self.etage_1 = Etage.objects.create(
+            batiment=self.batiment,
+            numero=1,
+            nom="Rez-de-chaussée"
+        )
+
+        self.etage_2 = Etage.objects.create(
+            batiment=self.batiment,
+            numero=2,
+            nom="Premier étage"
+        )
+
+        # Le plan de l'etage 1 declare ses dimensions,
+        # celui de l'etage 2 non.
+        self.plan_1 = Plan.objects.create(
+            etage=self.etage_1,
+            largeur=1000,
+            hauteur=800
+        )
+
+        self.plan_2 = Plan.objects.create(
+            etage=self.etage_2
+        )
+
+        self.salle_1 = Salle.objects.create(
+            etage=self.etage_1,
+            nom="Salle 101"
+        )
+
+        self.salle_2 = Salle.objects.create(
+            etage=self.etage_2,
+            nom="Salle 201"
+        )
+
+        self.equipement = Equipement.objects.create(
+            nom="PC-001",
+            numero_inventaire="INV-001",
+            situation="AFFECTE"
+        )
+
+    def test_une_salle_attribuee_positionne_au_centre(self):
+        """
+        Attribuer une salle cree une Position au centre du plan.
+        """
+
+        self.equipement.salle = self.salle_1
+        self.equipement.save()
+
+        position = LocalisationService.positionner_si_affecte(
+            self.equipement
+        )
+
+        self.assertIsNotNone(position)
+        self.assertEqual(position.plan, self.plan_1)
+        self.assertEqual(position.x, 500)
+        self.assertEqual(position.y, 400)
+
+    def test_sans_dimensions_le_centre_reprend_les_defauts(self):
+        """
+        Un plan sans dimensions utilise le canevas par defaut
+        du visualiseur (1000 x 700).
+        """
+
+        self.equipement.salle = self.salle_2
+        self.equipement.save()
+
+        position = LocalisationService.positionner_si_affecte(
+            self.equipement
+        )
+
+        self.assertEqual(position.plan, self.plan_2)
+        self.assertEqual(position.x, 500)
+        self.assertEqual(position.y, 350)
+
+    def test_l_emplacement_choisi_est_conserve(self):
+        """
+        Le positionnement automatique n'ecrase jamais
+        une position saisie par un administrateur.
+        """
+
+        LocalisationService.localiser_equipement(
+            equipement=self.equipement,
+            salle=self.salle_1,
+            plan=self.plan_1,
+            x=123,
+            y=456
+        )
+
+        position = LocalisationService.positionner_si_affecte(
+            self.equipement
+        )
+
+        self.assertEqual(position.x, 123)
+        self.assertEqual(position.y, 456)
+
+    def test_un_changement_de_salle_deplace_le_marqueur(self):
+        """
+        Changer d'etage deplace le materiel sur le plan
+        de l'etage de destination.
+        """
+
+        self.equipement.salle = self.salle_1
+        self.equipement.save()
+
+        LocalisationService.positionner_si_affecte(self.equipement)
+
+        self.equipement.salle = self.salle_2
+        self.equipement.save()
+
+        position = LocalisationService.positionner_si_affecte(
+            self.equipement
+        )
+
+        self.assertEqual(position.plan, self.plan_2)
+
+    def test_un_materiel_en_stock_ne_reste_pas_sur_le_plan(self):
+        """
+        Transfere vers le stock, le materiel perd sa position.
+        """
+
+        self.equipement.salle = self.salle_1
+        self.equipement.save()
+
+        LocalisationService.positionner_si_affecte(self.equipement)
+
+        self.equipement.situation = "EN_STOCK"
+        self.equipement.condition_stock = "NEUF"
+        self.equipement.salle = None
+        self.equipement.save()
+
+        resultat = LocalisationService.positionner_si_affecte(
+            self.equipement
+        )
+
+        self.assertIsNone(resultat)
+        self.assertFalse(
+            Position.objects.filter(
+                equipement=self.equipement
+            ).exists()
+        )
+
+    def test_sans_plan_sur_l_etage_aucune_position(self):
+        """
+        Un etage dépourvu de plan ne cree aucune position.
+        """
+
+        Salle.objects.create(
+            etage=Etage.objects.create(
+                batiment=self.batiment,
+                numero=3,
+                nom="Deuxième étage"
+            ),
+            nom="Salle 301"
+        )
+
+        salle_sans_plan = Salle.objects.get(nom="Salle 301")
+
+        self.equipement.salle = salle_sans_plan
+        self.equipement.save()
+
+        self.assertIsNone(
+            LocalisationService.positionner_si_affecte(
+                self.equipement
+            )
+        )
+
+        self.assertFalse(
+            Position.objects.filter(
+                equipement=self.equipement
+            ).exists()
+        )
