@@ -123,7 +123,9 @@
             <PlanViewer
                 :plan="plan"
                 :positions="positions"
+                :equipements="equipements"
                 :est-admin="estAdmin"
+                :equipement-a-mettre-en-evidence="equipementAMettreEnEvidence"
                 @position-modifiee="positionModifiee"
             />
 
@@ -169,13 +171,27 @@ import {
 
 import {
     getPlans,
+    getPositions,
     getPositionsParPlan,
 } from "../services/localisationService";
 
+import {
+    getEquipement,
+    getEquipements,
+} from "../services/equipementService";
+
+import {
+    getSalle,
+} from "../services/salleService";
+
 import PlanViewer from "../components/PlanViewer.vue";
+
+import { useRoute } from "vue-router";
 
 import { useAuthStore } from "../stores/auth.js";
 
+
+const route = useRoute();
 
 // Données
 
@@ -183,6 +199,7 @@ const batiments = ref([]);
 const etages = ref([]);
 const plans = ref([]);
 const positions = ref([]);
+const equipements = ref([]);
 
 const plan = ref(null);
 
@@ -200,6 +217,14 @@ const etageSelectionne = ref("");
 
 const loading = ref(false);
 const errorMessage = ref("");
+
+/*
+ * Équipement à mettre en évidence sur le plan.
+ *
+ * Renseigné depuis l'URL (?equipementId=) lorsqu'on arrive
+ * depuis le bouton « Localiser » de la liste des équipements.
+ */
+const equipementAMettreEnEvidence = ref(null);
 
 
 // Étages du bâtiment sélectionné
@@ -245,15 +270,28 @@ async function chargerDonnees() {
             donneesBatiments,
             donneesEtages,
             donneesPlans,
+            donneesEquipements,
         ] = await Promise.all([
             getBatiments(),
             getEtages(),
             getPlans(),
+            getEquipements(),
         ]);
 
         batiments.value = donneesBatiments;
         etages.value = donneesEtages;
         plans.value = donneesPlans;
+        equipements.value = Array.isArray(donneesEquipements)
+            ? donneesEquipements
+            : (donneesEquipements?.results ?? []);
+
+        // Arrivée depuis le bouton « Localiser » de la liste
+        // des équipements : on ouvre directement le bon plan.
+        if (route.query.equipementId) {
+            await naviguerVersEquipement(
+                route.query.equipementId
+            );
+        }
 
     } catch (error) {
 
@@ -265,6 +303,88 @@ async function chargerDonnees() {
     } finally {
 
         loading.value = false;
+
+    }
+
+}
+
+
+/*
+ * Ouvre le plan portant l'équipement passé dans l'URL
+ * et le met en évidence.
+ */
+async function naviguerVersEquipement(equipementId) {
+
+    try {
+
+        const positions = await getPositions();
+
+        const position = positions.find(
+            (item) =>
+                String(item.equipement) ===
+                String(equipementId)
+        );
+
+        let planTrouve = null;
+
+        if (position) {
+
+            planTrouve = plans.value.find(
+                (item) =>
+                    String(item.id) ===
+                    String(position.plan)
+            );
+
+        } else {
+
+            // L'équipement est affecté à une salle mais n'a
+            // pas encore de marqueur : on ouvre le plan de
+            // sa salle pour permettre son positionnement.
+            const equipement =
+                await getEquipement(equipementId);
+
+            if (equipement.salle) {
+
+                const salle = await getSalle(
+                    equipement.salle
+                );
+
+                planTrouve = plans.value.find(
+                    (item) =>
+                        String(item.etage) ===
+                        String(salle.etage)
+                );
+            }
+        }
+
+        if (!planTrouve) {
+            errorMessage.value =
+                "Aucun plan disponible pour cet équipement.";
+            return;
+        }
+
+        const etage = etages.value.find(
+            (item) =>
+                String(item.id) ===
+                String(planTrouve.etage)
+        );
+
+        if (etage) {
+            batimentSelectionne.value = etage.batiment;
+        }
+
+        etageSelectionne.value = planTrouve.etage;
+
+        equipementAMettreEnEvidence.value = equipementId;
+
+        await chargerPlan();
+
+    } catch (error) {
+
+        console.error(error);
+
+        errorMessage.value =
+            "Impossible de localiser l'équipement.";
 
     }
 
@@ -385,7 +505,7 @@ onMounted(() => {
 
 .page-header p {
     margin: 0;
-    color: #666;
+    color: var(--text-muted);
 }
 
 
@@ -397,7 +517,7 @@ onMounted(() => {
 
     margin-bottom: 25px;
 
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     border-radius: 10px;
 
     background: white;
@@ -421,7 +541,7 @@ onMounted(() => {
 .form-group select {
     padding: 10px;
 
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-medium);
     border-radius: 6px;
 
     background: white;
@@ -448,12 +568,12 @@ onMounted(() => {
 
 
 .plan-header span {
-    color: #666;
+    color: var(--text-muted);
 }
 
 
 .error {
-    color: #b00020;
+    color: var(--danger-text);
 }
 
 
@@ -462,9 +582,9 @@ onMounted(() => {
 
     text-align: center;
 
-    color: #666;
+    color: var(--text-muted);
 
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     border-radius: 10px;
 }
 
