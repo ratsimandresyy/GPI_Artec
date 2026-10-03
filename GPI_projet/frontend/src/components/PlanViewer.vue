@@ -136,6 +136,11 @@
         est aussi l'espace de coordonnées des marqueurs. Aucune
         transformation ni mise à l'échelle ne doit être appliquée au
         plan, sous peine de désaligner les équipements.
+
+        La sortie de zone est aussi écoutée au clavier (`@focusout`)
+        : le comportement lié au survol ne doit pas rester réservé
+        à la souris. Les deux appels visent la même fonction,
+        `gererSortieDuPlan`.
     -->
     <div
         class="plan-zone-defilante"
@@ -152,6 +157,7 @@
             @mousemove="deplacerEquipement"
             @mouseup="terminerDeplacementGlobal"
             @mouseleave="gererSortieDuPlan"
+            @focusout="gererSortieDuPlan"
             @dragover.prevent="
                 survolDepotStock = true
             "
@@ -180,6 +186,16 @@
 
                 La forme et le glyphe du marqueur portent l'état de
                 l'équipement : la couleur ne les porte jamais seule.
+
+                Le marqueur reste un `div` positionné en pixels par
+                `:style` : le remplacer par un `button` Rompreait la
+                géométrie et le glisser. Il est donc déclaré comme
+                bouton et rendu atteignable au clavier.
+
+                Le clic, Entrée et Espace appellent tous les trois
+                `signalerClicSurMarqueur` : le glisser, lui, reste
+                lié à `mousedown` et n'est jamais déclenché au
+                clavier.
             -->
             <div
                 v-for="position in positionsLocales"
@@ -200,10 +216,19 @@
                     left: position.x + 'px',
                     top: position.y + 'px'
                 }"
+                role="button"
+                tabindex="0"
+                :aria-label="titreMarqueur(position)"
                 @mousedown.stop="
                     commencerDeplacement(position, $event)
                 "
                 @click.stop="
+                    signalerClicSurMarqueur(position)
+                "
+                @keydown.enter.stop="
+                    signalerClicSurMarqueur(position)
+                "
+                @keydown.space.prevent.stop="
                     signalerClicSurMarqueur(position)
                 "
                 :title="titreMarqueur(position)"
@@ -423,17 +448,24 @@
             Elle est ouverte par le dépôt d'un équipement du stock sur
             le plan. Les identifiants de relation sont nécessaires aux
             attributs `aria-labelledby` / `aria-describedby`.
+
+            Le clic sur le fond ferme la modale ; Échap fait de même.
+            Le `.stop` évite que l'écouteur global de `surTouche` ne
+            déclenche une seconde fois `annulerAffectation`.
         -->
 
         <div
             v-if="affichageChoixSalle"
             class="modal-overlay"
             @click.self="annulerAffectation"
+            @keydown.esc.stop="annulerAffectation"
         >
             <div
+                ref="modalAffectation"
                 class="modal"
                 role="dialog"
                 aria-modal="true"
+                tabindex="-1"
                 aria-labelledby="titre-affectation"
                 aria-describedby="description-affectation"
             >
@@ -700,6 +732,7 @@ import {
 
 import AppAlert from "./AppAlert.vue";
 import EmptyState from "./EmptyState.vue";
+import { useFocusTrap } from "../composables/useFocusTrap";
 
 /*
  * Props reçues depuis Localisation.vue.
@@ -1087,6 +1120,17 @@ const equipementEnAttente = ref(null);
 const positionStockEnAttente = ref(null);
 
 const affichageChoixSalle = ref(false);
+
+// Boîte de choix de salle : cible du piège de focus partagé.
+const modalAffectation = ref(null);
+
+/*
+ * Cette modale s'ouvre au dépôt d'un équipement, opération à la souris :
+ * le focus initial porte donc sur la boîte entière, pour annoncer le
+ * titre et la position visée. Aucun déclencheur clavier n'ayant le focus
+ * à ce moment-là, la restitution reste sans effet.
+ */
+useFocusTrap(modalAffectation, { focusInitial: "conteneur" });
 const salleSelectionnee = ref("");
 const affectationEnCours = ref(false);
 const messageAffectation = ref("");
