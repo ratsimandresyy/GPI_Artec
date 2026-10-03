@@ -189,7 +189,7 @@
  * à partir des routes réellement existantes. L'état d'authentification
  * et le rôle proviennent exclusivement du store Pinia.
  */
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
@@ -247,6 +247,31 @@ function seDeconnecter() {
     authStore.seDeconnecter();
     router.push("/dashboard-public");
 }
+
+/*
+ * Échap referme le menu mobile, comme le fait déjà le voile au clic.
+ *
+ * L'écoute est portée par `document`, comme dans `Tickets.vue`,
+ * `Utilisateurs.vue` et `ConfirmDialog.vue` : le focus peut être sur
+ * le bouton hamburger, dans la navigation ou ailleurs, et le voile
+ * n'est pas focusable.
+ *
+ * Le garde-fou sur `menuOuvert` évite de consommer l'Échap destiné à
+ * une autre fermeture.
+ */
+function surTouche(event) {
+    if (event.key === "Escape" && menuOuvert.value) {
+        menuOuvert.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener("keydown", surTouche);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener("keydown", surTouche);
+});
 </script>
 
 <style scoped>

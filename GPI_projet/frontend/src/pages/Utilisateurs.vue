@@ -181,9 +181,11 @@
             @click.self="fermerFormulaire"
         >
             <div
+                ref="modalFormulaire"
                 class="modal"
                 role="dialog"
                 aria-modal="true"
+                tabindex="-1"
                 aria-labelledby="titre-formulaire-utilisateur"
             >
                 <h2
@@ -378,9 +380,10 @@
  * `estAdmin` ne protège que l'affichage : l'autorisation effective
  * reste vérifiée par Django.
  */
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import { useAuthStore } from "../stores/auth";
+import { useFocusTrap } from "../composables/useFocusTrap";
 
 import {
     getUtilisateurs,
@@ -411,6 +414,17 @@ const saving = ref(false);
 const erreur = ref("");
 
 const formulaireVisible = ref(false);
+
+// Boîte du formulaire : cible du piège de focus partagé.
+const modalFormulaire = ref(null);
+
+/*
+ * Le focus entre dans la boîte à l'ouverture, reste prisonnier pendant
+ * sa durée de vie, puis revient sur le bouton du tableau ayant ouvert le
+ * formulaire. Le focus initial porte sur la boîte entière afin que son
+ * titre soit annoncé avant le premier champ.
+ */
+useFocusTrap(modalFormulaire, { focusInitial: "conteneur" });
 
 const modeModification = ref(false);
 
@@ -514,6 +528,28 @@ function fermerFormulaire() {
 }
 
 /*
+ * Échap referme le formulaire, comme le font déjà le voile au clic et
+ * le bouton « Annuler ».
+ *
+ * L'écoute est portée par `document`, comme dans `Tickets.vue`,
+ * `MainLayout.vue` et `ConfirmDialog.vue` : le focus peut être dans le
+ * formulaire ou dans la page.
+ *
+ * Comme dans `Tickets.vue`, la fermeture est ignorée pendant un
+ * enregistrement : le formulaire doit rester visible pour afficher
+ * une éventuelle erreur.
+ */
+function surTouche(event) {
+    if (
+        event.key === "Escape" &&
+        formulaireVisible.value &&
+        !saving.value
+    ) {
+        fermerFormulaire();
+    }
+}
+
+/*
  * Enregistre un utilisateur.
  */
 async function enregistrer() {
@@ -595,6 +631,12 @@ async function supprimer() {
 
 onMounted(() => {
     chargerUtilisateurs();
+
+    document.addEventListener("keydown", surTouche);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener("keydown", surTouche);
 });
 </script>
 
