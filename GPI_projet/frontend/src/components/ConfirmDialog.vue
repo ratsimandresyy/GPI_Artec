@@ -4,9 +4,11 @@
         @click.self="annuler"
     >
         <div
+            ref="boite"
             class="confirm"
             role="alertdialog"
             aria-modal="true"
+            tabindex="-1"
             :aria-labelledby="titreId"
             :aria-describedby="messageId"
         >
@@ -33,7 +35,6 @@
 
             <div class="confirm__actions">
                 <button
-                    ref="boutonAnnuler"
                     type="button"
                     class="btn-secondary"
                     :disabled="enCours"
@@ -67,7 +68,9 @@
  * l'utilisateur. La suppression reste déclenchée par la page
  * appelante et l'autorisation effective reste assurée par l'API.
  */
-import { nextTick, ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
+
+import { useFocusTrap } from "../composables/useFocusTrap";
 
 const props = defineProps({
     // Titre de la boîte, par exemple « Supprimer l'équipement ».
@@ -108,7 +111,19 @@ const props = defineProps({
 const emit = defineEmits(["confirm", "cancel"]);
 
 const enCours = ref(false);
-const boutonAnnuler = ref(null);
+
+// Boîte de dialogue : cible du piège de focus partagé, qui mémorise
+// aussi l'élément focalisé à l'ouverture pour le lui restituer ensuite.
+const boite = ref(null);
+
+useFocusTrap(boite, {
+    /*
+     * Le focus revient sur l'annulation, premier élément focusable de la
+     * boîte : l'utilisateur peut la quitter au clavier sans valider une
+     * suppression par inadvertance.
+     */
+    focusInitial: "premier",
+});
 
 // Identifiants du titre et du message, nécessaires aux relations
 // aria-labelledby / aria-describedby.
@@ -139,15 +154,8 @@ function surTouche(event) {
     }
 }
 
-onMounted(async () => {
+onMounted(() => {
     document.addEventListener("keydown", surTouche);
-
-    /*
-     * Le focus revient sur l'annulation : l'utilisateur peut quitter
-     * la boîte au clavier sans valider une suppression par inadvertance.
-     */
-    await nextTick();
-    boutonAnnuler.value?.focus();
 });
 
 onBeforeUnmount(() => {

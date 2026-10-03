@@ -9,7 +9,7 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="titre-formulaire-equipement"
-            @keydown.esc="demanderFermeture"
+            tabindex="-1"
         >
             <h2
                 id="titre-formulaire-equipement"
@@ -369,8 +369,9 @@
  * réponse de l'API. Il ne peut pas être déduit du seul `emit` : celui-ci
  * est synchrone et se terminerait avant l'écriture.
  */
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { getSalles } from '../services/salleService';
+import { useFocusTrap } from '../composables/useFocusTrap';
 
 const props = defineProps({
     mode: {
@@ -401,6 +402,15 @@ const emit = defineEmits(['close', 'save']);
 const formulaire = ref(creerFormulaireVide());
 const salles = ref([]);
 const chargementSalles = ref(false);
+const boite = ref(null);
+
+/*
+ * Le focus entre dans la boîte et y reste prisonnier. `tabindex="-1"`
+ * rend la boîte programmable sans l'ajouter à l'ordre de tabulation :
+ * le focus initial porte sur la boîte entière, pas sur le premier champ,
+ * pour que l'utilisateur entende d'abord le titre du formulaire.
+ */
+useFocusTrap(boite, { focusInitial: 'conteneur' });
 
 function creerFormulaireVide() {
     return {
@@ -459,6 +469,23 @@ function demanderFermeture() {
     }
 }
 
+/*
+ * Échap ferme la modale.
+ *
+ * L'écoute est portée par `document` et non par la boîte : celle-ci
+ * n'était pas focusable, si bien que son `@keydown.esc` ne se
+ * déclenchait que si le focus se trouvait déjà dans le formulaire.
+ * L'écouteur global rend la fermeture fiable quel que soit le lieu
+ * du focus, comme dans `ConfirmDialog.vue` et `Tickets.vue`.
+ *
+ * `demanderFermeture` filtre elle-même l'état de chargement.
+ */
+function surTouche(event) {
+    if (event.key === 'Escape') {
+        demanderFermeture();
+    }
+}
+
 watch(() => props.equipement, (nouvelEquipement) => {
     if (!nouvelEquipement) {
         formulaire.value = creerFormulaireVide();
@@ -483,6 +510,12 @@ watch(() => props.equipement, (nouvelEquipement) => {
 
 onMounted(() => {
     chargerSalles();
+
+    document.addEventListener('keydown', surTouche);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', surTouche);
 });
 </script>
 

@@ -543,10 +543,12 @@
             @click.self="fermerModalResolution"
         >
             <div
+                ref="modalResolution"
                 class="modal"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="titre-resolution"
+                tabindex="-1"
             >
                 <h2
                     id="titre-resolution"
@@ -647,10 +649,12 @@
             @click.self="fermerModalQualification"
         >
             <div
+                ref="modalQualification"
                 class="modal"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="titre-qualification"
+                tabindex="-1"
             >
                 <h2
                     id="titre-qualification"
@@ -765,6 +769,7 @@ import { getEquipementsDashboard } from "../services/dashboardService";
 import { useAuthStore } from "../stores/auth";
 import { useNotificationStore } from "../stores/notifications";
 import { useTableData } from "../composables/useTableData";
+import { useFocusTrap } from "../composables/useFocusTrap";
 
 import AppAlert from "../components/AppAlert.vue";
 import EmptyState from "../components/EmptyState.vue";
@@ -810,7 +815,6 @@ const erreurQualification = ref("");
 const ticketEnResolution = ref(null);
 const commentaireResolution = ref("");
 const afficherModalResolution = ref(false);
-
 // « Materiel repare ? » du diagramme d'activite : par oui, le matériel
 // est remis en service a la cloture.
 const materielRepare = ref(true);
@@ -819,6 +823,26 @@ const ticketEnQualification = ref(null);
 const typeQualification = ref("MAINTENANCE");
 const prioriteQualification = ref("NORMALE");
 const afficherModalQualification = ref(false);
+
+/*
+ * Boîtes des deux modales.
+ *
+ * Le focus y entre à l'ouverture : sans cela, il restait sur le bouton
+ * du tableau, derrière la modale, et la première tabulation repartait
+ * dans la liste au lieu du formulaire de résolution ou de qualification.
+ */
+const modalResolution = ref(null);
+const modalQualification = ref(null);
+
+/*
+ * Les deux modales de la page sont piégées par le composable partagé :
+ * le focus y entre, y reste, et revient sur le bouton du tableau qui les
+ * avait ouvertes. Le focus initial porte sur la boîte entière
+ * (`tabindex="-1"`) afin que le titre de la modale soit annoncé avant
+ * le premier champ.
+ */
+useFocusTrap(modalResolution, { focusInitial: "conteneur" });
+useFocusTrap(modalQualification, { focusInitial: "conteneur" });
 
 const estAdmin = computed(() => authStore.isAdmin);
 

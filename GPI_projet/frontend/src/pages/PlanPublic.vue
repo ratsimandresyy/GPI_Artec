@@ -195,9 +195,11 @@
             @click.self="fermerModal"
         >
             <div
+                ref="modalEquipement"
                 class="modal"
                 role="dialog"
                 aria-modal="true"
+                tabindex="-1"
                 :aria-label="`Fiche de l'équipement ${equipementSelectionne.nom}`"
             >
                 <div class="modal-entete">
@@ -281,8 +283,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
+
+import { useFocusTrap } from '../composables/useFocusTrap';
 
 import { getBatiments } from '../services/batimentService';
 import { getEtages } from '../services/etageService';
@@ -308,6 +312,18 @@ const equipements = ref([]);
 const positions = ref([]);
 
 const equipementSelectionne = ref(null);
+
+// Fiche équipement : cible du piège de focus partagé.
+const modalEquipement = ref(null);
+
+/*
+ * La fiche s'ouvre au clic sur un marqueur du plan. Le focus entre dans
+ * la boîte, y reste prisonnier, et revient sur le marqueur qui l'a
+ * ouverte. Le focus initial porte sur la boîte entière : le premier
+ * élément focusable est le bouton de fermeture, qui proposerait de
+ * partir avant d'avoir lu la fiche.
+ */
+useFocusTrap(modalEquipement, { focusInitial: 'conteneur' });
 const equipementAMettreEnEvidence = ref(null);
 
 const batimentSelectionne = ref("");
@@ -523,8 +539,23 @@ function fermerModal() {
     equipementSelectionne.value = null;
 }
 
+/*
+ * Échap referme la fiche. L'écoute se fait sur `document` car le focus
+ * peut se trouver dans la fiche comme dans le plan situé derrière.
+ */
+function surTouche(event) {
+    if (event.key === 'Escape') {
+        fermerModal();
+    }
+}
+
 onMounted(() => {
     chargerDonnees();
+    document.addEventListener('keydown', surTouche);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', surTouche);
 });
 </script>
 

@@ -32,6 +32,13 @@
                 @submit.prevent="seConnecter"
             >
                 <div class="form-group">
+                    <!--
+                        Pas d'`autofocus` : il vole le focus au titre de
+                        la page, qu'un lecteur d'écran doit pouvoir lire
+                        avant le formulaire. La tabulation entre ici par
+                        le bouton « Retour », puis le champ, ce qui suit
+                        l'ordre visuel.
+                    -->
                     <label for="username">
                         Nom d'utilisateur
                     </label>
@@ -44,7 +51,6 @@
                         autocomplete="username"
                         autocapitalize="none"
                         spellcheck="false"
-                        autofocus
                         :disabled="chargement"
                         :aria-describedby="
                             errorMessage ? 'erreur-connexion' : undefined
