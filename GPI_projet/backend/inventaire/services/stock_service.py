@@ -76,6 +76,12 @@ class StockService:
                 "Seul un équipement en service peut être affecté."
             )
 
+        # RG-L04 : la salle doit appartenir au même étage que le plan
+        if salle.etage_id != plan.etage_id:
+            raise ValueError(
+                "La salle et le plan doivent appartenir au même étage."
+            )
+
         equipement.situation = "AFFECTE"
         equipement.condition_stock = None
         equipement.etat = "EN_SERVICE"

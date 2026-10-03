@@ -15,5 +15,11 @@ class Etage(models.Model):
         blank = True,
     )
 
+    class Meta:
+        unique_together = [
+            ("batiment", "numero"),
+            ("batiment", "nom"),
+        ]
+
     def __str__(self):
         return f"{self.batiment.nom} - Etage {self.numero}"
