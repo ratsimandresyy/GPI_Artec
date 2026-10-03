@@ -119,7 +119,7 @@ class TicketPanneAdmin(admin.ModelAdmin):
 
     search_fields = (
         "equipement__nom",
-        "equipement__numero_invntaire",
+        "equipement__numero_inventaire",
         "description",
     )
 
